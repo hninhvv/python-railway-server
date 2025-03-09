@@ -92,50 +92,6 @@ def update_ip():
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)})
 
-# API endpoint để cập nhật thông tin người dùng (IP và GPS)
-@app.route('/update_user_info', methods=['POST'])
-def update_user_info():
-    try:
-        data = request.json
-        account = data.get('account')
-        ip_address = data.get('ip')
-        gps_info = data.get('gps_info', {})
-        wifi_name = data.get('wifi_name')
-        
-        if not account:
-            return jsonify({"status": "error", "message": "Thiếu thông tin tài khoản"})
-        
-        # Tải dữ liệu người dùng
-        user_data_file = os.path.join('translate', 'user_data.json')
-        if os.path.exists(user_data_file):
-            with open(user_data_file, 'r', encoding='utf-8') as f:
-                user_data = json.load(f)
-        else:
-            user_data = {"usersWindows": [], "usersMacOS": [], "usersAndroid": [], "usersIOS": []}
-        
-        # Cập nhật thông tin cho tài khoản
-        updated = False
-        for os_type in ["usersWindows", "usersMacOS", "usersAndroid", "usersIOS"]:
-            for user in user_data.get(os_type, []):
-                if user.get('account') == account:
-                    if ip_address:
-                        user['ip'] = ip_address
-                    if gps_info:
-                        user['gps_info'] = gps_info
-                    if wifi_name:
-                        user['wifi_name'] = wifi_name
-                    updated = True
-        
-        if updated:
-            # Lưu dữ liệu người dùng
-            with open(user_data_file, 'w', encoding='utf-8') as f:
-                json.dump(user_data, f, indent=2, ensure_ascii=False)
-            return jsonify({"status": "success", "message": "Đã cập nhật thông tin người dùng thành công"})
-        else:
-            return jsonify({"status": "error", "message": "Không tìm thấy tài khoản"})
-    except Exception as e:
-        return jsonify({"status": "error", "message": str(e)})
-
 # Thiết lập các route cho xác thực và đồng bộ dữ liệu
 setup_auth_routes(app)
 
