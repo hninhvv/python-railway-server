@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Đồng bộ dữ liệu</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        button {
+            padding: 10px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 10px 0;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #result {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Công cụ đồng bộ dữ liệu</h1>
+    <p>Công cụ này sẽ đọc dữ liệu từ localStorage của trang web @key.html và đồng bộ với server.</p>
+    
+    <button onclick="syncFromLocalStorage()">Đồng bộ từ localStorage</button>
+    <button onclick="testAuthentication()">Kiểm tra xác thực</button>
+    
+    <div id="result"></div>
+    
+    <script>
+        // Hàm đồng bộ dữ liệu từ localStorage
+        function syncFromLocalStorage() {
+            document.getElementById('result').innerHTML = 'Đang đồng bộ dữ liệu...';
+            
+            // Đọc dữ liệu từ localStorage
+            const userData = {
+                usersWindows: JSON.parse(localStorage.getItem('keyAuthUsersWindows') || '[]'),
+                usersMacOS: JSON.parse(localStorage.getItem('keyAuthUsersMacOS') || '[]'),
+                usersAndroid: JSON.parse(localStorage.getItem('keyAuthUsersAndroid') || '[]'),
+                usersIOS: JSON.parse(localStorage.getItem('keyAuthUsersIOS') || '[]')
+            };
+            
+            // Gửi dữ liệu đến server
+            fetch('/sync_data', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(userData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('result').innerHTML = `
+                    <h3>Đồng bộ thành công!</h3>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                    <h4>Dữ liệu đã đồng bộ:</h4>
+                    <pre>${JSON.stringify(userData, null, 2)}</pre>
+                `;
+            })
+            .catch(error => {
+                document.getElementById('result').innerHTML = `
+                    <h3 style="color: red;">Lỗi khi đồng bộ dữ liệu!</h3>
+                    <p>${error.message}</p>
+                `;
+            });
+        }
+        
+        // Hàm kiểm tra xác thực
+        function testAuthentication() {
+            const username = prompt('Nhập tên đăng nhập:');
+            const password = prompt('Nhập mật khẩu:');
+            
+            if (!username || !password) {
+                document.getElementById('result').innerHTML = '<h3 style="color: red;">Vui lòng nhập đầy đủ thông tin!</h3>';
+                return;
+            }
+            
+            document.getElementById('result').innerHTML = 'Đang kiểm tra xác thực...';
+            
+            fetch('/authenticate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ username, password })
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('result').innerHTML = `
+                    <h3>Kết quả xác thực:</h3>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+            })
+            .catch(error => {
+                document.getElementById('result').innerHTML = `
+                    <h3 style="color: red;">Lỗi khi xác thực!</h3>
+                    <p>${error.message}</p>
+                `;
+            });
+        }
+    </script>
+</body>
+</html> 

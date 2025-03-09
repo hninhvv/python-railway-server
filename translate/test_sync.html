@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Sync API</title>
+</head>
+<body>
+    <h2>Test Sync API</h2>
+    <button onclick="testSync()">Test Sync</button>
+    <div id="result" style="margin-top: 20px; padding: 10px; border: 1px solid #ccc;"></div>
+
+    <script>
+        function testSync() {
+            document.getElementById('result').innerHTML = 'Đang gửi yêu cầu...';
+            
+            const testData = {
+                usersWindows: [],
+                usersMacOS: [],
+                usersAndroid: [],
+                usersIOS: []
+            };
+            
+            fetch('http://localhost:5001/sync_data', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(testData)
+            })
+            .then(response => {
+                document.getElementById('result').innerHTML += '<br>Nhận được phản hồi với status: ' + response.status;
+                
+                // Kiểm tra kiểu nội dung của phản hồi
+                const contentType = response.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    return response.json();
+                } else {
+                    // Nếu không phải JSON, đọc dưới dạng text
+                    return response.text().then(text => {
+                        document.getElementById('result').innerHTML += '<br>Phản hồi không phải JSON:<br><pre>' + text.substring(0, 500) + '</pre>';
+                        throw new Error('Phản hồi không phải JSON');
+                    });
+                }
+            })
+            .then(data => {
+                document.getElementById('result').innerHTML = 
+                    '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+            })
+            .catch(error => {
+                document.getElementById('result').innerHTML += 
+                    '<br><pre style="color: red;">Error: ' + error.message + '</pre>';
+                
+                console.error('Lỗi chi tiết:', error);
+            });
+        }
+    </script>
+</body>
+</html> 

@@ -1,0 +1,1579 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trang Web Nền Tối</title>
+    <style>
+        body {
+            background-color: #121212; /* Màu nền tối */
+            color: #ffffff; /* Màu chữ sáng */
+            font-family: Arial, sans-serif;
+            margin: 0;
+            display: flex; /* Sử dụng flexbox để tạo layout */
+            height: 100vh; /* Chiều cao của body bằng chiều cao của viewport */
+        }
+        .sidebar {
+            width: 200px; /* Chiều rộng của sidebar */
+            background-color: #1a1a1a; /* Màu nền tối hơn cho sidebar */
+            padding: 20px;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.5); /* Đổ bóng cho sidebar */
+            display: flex; /* Sử dụng flexbox cho sidebar */
+            flex-direction: column; /* Xếp dọc các nút */
+        }
+        .sidebar h2 {
+            color: red; /* Màu chữ tiêu đề đỏ */
+            border-bottom: 2px solid red; /* Đường kẻ dưới tiêu đề */
+            padding-bottom: 10px; /* Khoảng cách dưới tiêu đề */
+        }
+        .divider {
+            width: 2px; /* Độ dày của đường kẻ */
+            background-color: red; /* Màu của đường kẻ */
+            height: 100vh; /* Chiều cao của đường kẻ bằng chiều cao của viewport */
+        }
+        .content {
+            flex: 1; /* Nội dung chính chiếm phần còn lại */
+            padding: 20px;
+            text-align: center; /* Căn giữa nội dung */
+            overflow-y: auto; /* Thêm thanh cuộn dọc khi cần thiết */
+        }
+        h1 {
+            color: red; /* Màu chữ tiêu đề đỏ */
+            border-bottom: 2px solid red; /* Đường kẻ dưới tiêu đề */
+            padding-bottom: 10px; /* Khoảng cách dưới tiêu đề */
+        }
+        p {
+            color: #ffffff; /* Màu chữ cho đoạn văn */
+        }
+        button {
+            background-color: red; /* Màu nền của nút */
+            color: white; /* Màu chữ của nút */
+            border: none; /* Bỏ viền */
+            padding: 10px 15px; /* Khoảng cách bên trong nút */
+            margin: 10px 5px; /* Khoảng cách giữa các nút */
+            cursor: pointer; /* Con trỏ chuột khi di chuột qua nút */
+            border-radius: 5px; /* Bo tròn các góc của nút */
+        }
+        button:hover {
+            background-color: darkred; /* Màu nền khi di chuột qua nút */
+        }
+        table {
+            width: 100%; /* Chiều rộng của bảng */
+            border-collapse: collapse; /* Bỏ khoảng cách giữa các ô */
+            margin-top: 20px; /* Khoảng cách trên bảng */
+        }
+        th, td {
+            border: 1px solid red; /* Viền cho ô */
+            padding: 10px; /* Khoảng cách bên trong ô */
+            text-align: left; /* Căn trái nội dung trong ô */
+        }
+        th {
+            background-color: #1a1a1a; /* Màu nền cho tiêu đề bảng */
+            cursor: pointer; /* Thêm con trỏ tay khi di chuột qua */
+        }
+        
+        th:hover {
+            background-color: #333; /* Màu nền khi di chuột qua */
+        }
+
+        /* Modal styles */
+        .modal {
+            display: none; /* Ẩn modal mặc định */
+            position: fixed; /* Vị trí cố định */
+            z-index: 1; /* Hiển thị trên các phần tử khác */
+            left: 0;
+            top: 0;
+            width: 100%; /* Chiều rộng đầy đủ */
+            height: 100%; /* Chiều cao đầy đủ */
+            overflow: auto; /* Cho phép cuộn nếu cần */
+            background-color: rgba(0,0,0,0.7); /* Nền tối mờ */
+        }
+
+        .modal-content {
+            background-color: #1a1a1a; /* Màu nền của modal */
+            margin: 15% auto; /* Căn giữa modal */
+            padding: 20px;
+            border: 1px solid red;
+            border-radius: 5px;
+            width: 300px; /* Chiều rộng của modal */
+        }
+
+        .close {
+            color: red;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close:hover {
+            color: darkred;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+            position: relative; /* Để định vị cảnh báo */
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            text-align: left;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+
+        /* Cảnh báo */
+        .warning {
+            border: 1px solid red !important;
+            animation: shake 0.3s ease-in-out; /* Thay đổi thời gian và loại bỏ infinite */
+        }
+
+        .warning-icon {
+            position: absolute;
+            right: 10px;
+            top: 35px;
+            color: red;
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        /* Hiệu ứng nâng lên hạ xuống */
+        @keyframes shake {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            25% {
+                transform: translateY(-3px);
+            }
+            75% {
+                transform: translateY(3px);
+            }
+        }
+
+        /* Tùy chỉnh thanh cuộn */
+        ::-webkit-scrollbar {
+            width: 8px; /* Độ rộng của thanh cuộn */
+        }
+        ::-webkit-scrollbar-thumb {
+            background: red; /* Màu của thanh cuộn */
+            border-radius: 10px; /* Bo tròn các góc */
+        }
+        ::-webkit-scrollbar-track {
+            background: #1a1a1a; /* Màu nền của thanh cuộn */
+        }
+        
+        /* Kiểu dáng cho hàng được chọn */
+        tr.selected {
+            background-color: rgba(255, 0, 0, 0.2); /* Màu đỏ với độ trong suốt */
+        }
+        
+        /* Kiểu dáng khi hover qua hàng */
+        tbody tr:hover {
+            background-color: rgba(255, 0, 0, 0.1); /* Màu đỏ nhạt khi hover */
+            cursor: pointer; /* Đổi con trỏ thành bàn tay */
+        }
+        
+        /* Kiểu dáng cho menu ngữ cảnh */
+        .context-menu {
+            display: none;
+            position: absolute;
+            background-color: #1a1a1a;
+            border: 1px solid red;
+            border-radius: 5px;
+            padding: 5px 0;
+            min-width: 150px;
+            z-index: 1000;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+        }
+        
+        .context-menu-item {
+            padding: 8px 15px;
+            cursor: pointer;
+            color: white;
+        }
+        
+        .context-menu-item:hover {
+            background-color: rgba(255, 0, 0, 0.2);
+        }
+        
+        /* Kiểu dáng cho biểu tượng mắt */
+        .eye-icon {
+            cursor: pointer;
+            margin-left: 5px;
+            color: white;
+            font-size: 16px;
+        }
+        
+        /* Kiểu dáng cho mật khẩu và MAC bị ẩn */
+        .masked-text {
+            font-family: monospace;
+        }
+    </style>
+    <script src="md5.js"></script>
+    <script src="ip_storage.js"></script>
+    <script>
+        // Mảng lưu trữ danh sách người dùng cho từng hệ điều hành
+        let usersWindows = [];
+        let usersMacOS = [];
+        let usersAndroid = [];
+        let usersIOS = [];
+
+        // Biến lưu trữ trạng thái đăng nhập admin
+        let isAdminLoggedIn = false;
+
+        // Biến lưu trữ trạng thái đăng nhập
+        let isLoggedIn = false;
+
+        // Biến lưu trữ người dùng được chọn
+        let selectedUser = null;
+
+        // Biến để theo dõi trạng thái ẩn/hiện của mật khẩu và MAC
+        let showPassword = false;
+        let showIP = false;
+
+        // Biến để theo dõi hướng sắp xếp
+        let sortDirection = Array(6).fill(true); // true = tăng dần, false = giảm dần
+
+        // Biến lưu trữ hệ điều hành hiện tại
+        let currentOS = 'Windows';
+
+        // Biến để theo dõi phiên bản dữ liệu
+        let dataVersion = 0;
+
+        // Hàm đồng bộ dữ liệu người dùng với API server theo hệ điều hành cụ thể
+        function syncDataWithServer(osType = null) {
+            // Tăng phiên bản dữ liệu
+            if (typeof window.dataVersion === 'undefined') {
+                window.dataVersion = 1;
+            } else {
+                window.dataVersion++;
+            }
+            
+            // Nếu không chỉ định hệ điều hành, đồng bộ tất cả
+            let userData = {};
+            
+            if (osType) {
+                // Đồng bộ chỉ một hệ điều hành cụ thể
+                switch (osType) {
+                case 'Windows':
+                        userData = {
+                            usersWindows: usersWindows,
+                            version: window.dataVersion
+                        };
+                    break;
+                case 'MacOS':
+                        userData = {
+                            usersMacOS: usersMacOS,
+                            version: window.dataVersion
+                        };
+                    break;
+                case 'Android':
+                        userData = {
+                            usersAndroid: usersAndroid,
+                            version: window.dataVersion
+                        };
+                    break;
+                case 'IOS':
+                        userData = {
+                            usersIOS: usersIOS,
+                            version: window.dataVersion
+                        };
+                    break;
+                    default:
+                        // Nếu không khớp với bất kỳ hệ điều hành nào, đồng bộ tất cả
+                        userData = {
+                            usersWindows: usersWindows,
+                            usersMacOS: usersMacOS,
+                            usersAndroid: usersAndroid,
+                            usersIOS: usersIOS,
+                            version: window.dataVersion
+                        };
+                }
+            } else {
+                // Đồng bộ tất cả hệ điều hành
+                userData = {
+                    usersWindows: usersWindows,
+                    usersMacOS: usersMacOS,
+                    usersAndroid: usersAndroid,
+                    usersIOS: usersIOS,
+                    version: window.dataVersion
+                };
+            }
+            
+            console.log(`Đang đồng bộ dữ liệu ${osType || 'tất cả'} với server...`);
+            
+            fetch('/sync_data', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(userData)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Lỗi kết nối: ' + response.status);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log(`Đồng bộ dữ liệu ${osType || 'tất cả'} thành công:`, data);
+                showNotification(`Đồng bộ dữ liệu ${osType || 'tất cả'} thành công!`, 'success');
+                
+                // Kiểm tra trạng thái đồng bộ
+                checkSyncStatus();
+            })
+            .catch(error => {
+                console.error(`Lỗi khi đồng bộ dữ liệu ${osType || 'tất cả'}:`, error);
+                showNotification(`Lỗi khi đồng bộ dữ liệu ${osType || 'tất cả'}: ` + error.message, 'error');
+            });
+        }
+
+        // Hàm hiển thị thông báo
+        function showNotification(message, type = 'info') {
+            // Kiểm tra xem đã có phần tử thông báo chưa
+            let notification = document.getElementById('sync-notification');
+            if (!notification) {
+                // Tạo phần tử thông báo nếu chưa có
+                notification = document.createElement('div');
+                notification.id = 'sync-notification';
+                notification.style.position = 'fixed';
+                notification.style.bottom = '20px';
+                notification.style.right = '20px';
+                notification.style.padding = '10px 20px';
+                notification.style.borderRadius = '5px';
+                notification.style.zIndex = '9999';
+                notification.style.transition = 'opacity 0.5s';
+                document.body.appendChild(notification);
+            }
+            
+            // Thiết lập kiểu thông báo
+            if (type === 'success') {
+                notification.style.backgroundColor = '#4CAF50';
+                notification.style.color = 'white';
+            } else if (type === 'error') {
+                notification.style.backgroundColor = '#F44336';
+                notification.style.color = 'white';
+            } else {
+                notification.style.backgroundColor = '#2196F3';
+                notification.style.color = 'white';
+            }
+            
+            // Hiển thị thông báo
+            notification.textContent = message;
+            notification.style.opacity = '1';
+            
+            // Ẩn thông báo sau 3 giây
+            setTimeout(() => {
+                notification.style.opacity = '0';
+            }, 3000);
+        }
+
+        // Hàm kiểm tra trạng thái đồng bộ
+        function checkSyncStatus() {
+            fetch('/sync_status')
+            .then(response => response.json())
+            .then(data => {
+                console.log('Trạng thái đồng bộ:', data);
+            })
+            .catch(error => {
+                console.error('Lỗi khi kiểm tra trạng thái đồng bộ:', error);
+            });
+        }
+
+        // Hàm đồng bộ dữ liệu an toàn (không tải lại trang)
+        function syncDataWithServerSafe() {
+            // Tăng phiên bản dữ liệu
+            if (typeof dataVersion === 'undefined') {
+                window.dataVersion = 1;
+            } else {
+                window.dataVersion++;
+            }
+            
+            const userData = {
+                usersWindows: usersWindows,
+                usersMacOS: usersMacOS,
+                usersAndroid: usersAndroid,
+                usersIOS: usersIOS,
+                version: window.dataVersion
+            };
+            
+            console.log('Đang đồng bộ dữ liệu với server (an toàn)...');
+            
+            fetch('/sync_data', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(userData)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Lỗi kết nối: ' + response.status);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Đồng bộ dữ liệu thành công:', data);
+                showNotification('Đồng bộ dữ liệu thành công!', 'success');
+            })
+            .catch(error => {
+                console.error('Lỗi khi đồng bộ dữ liệu:', error);
+                showNotification('Lỗi khi đồng bộ dữ liệu: ' + error.message, 'error');
+            });
+        }
+
+        // Cập nhật hàm saveUsersToLocalStorage để không tự động đồng bộ
+        function saveUsersToLocalStorage() {
+            localStorage.setItem('keyAuthUsersWindows', JSON.stringify(usersWindows));
+            localStorage.setItem('keyAuthUsersMacOS', JSON.stringify(usersMacOS));
+            localStorage.setItem('keyAuthUsersAndroid', JSON.stringify(usersAndroid));
+            localStorage.setItem('keyAuthUsersIOS', JSON.stringify(usersIOS));
+            
+            // Không gọi syncDataWithServer() ở đây để tránh đồng bộ tự động
+            // Thay vào đó, chúng ta sẽ gọi syncDataWithServerSafe() khi cần thiết
+        }
+
+        // Đồng bộ dữ liệu khi trang được tải
+        window.onload = function() {
+            // Đọc danh sách người dùng từ localStorage
+            loadUsersFromLocalStorage();
+            
+            // Hiển thị nội dung Windows mặc định khi tải trang
+            showContent('Windows');
+            
+            // Cập nhật bảng sau khi tải dữ liệu
+            updateTable();
+            
+            // Thêm sự kiện Enter cho các trường nhập liệu
+            const nameUserInput = document.getElementById('nameUser');
+            const accountInput = document.getElementById('account');
+            const passwordInput = document.getElementById('password');
+            const limitedInput = document.getElementById('limited');
+            
+            if (nameUserInput) nameUserInput.addEventListener('keypress', handleEnterKey);
+            if (accountInput) accountInput.addEventListener('keypress', handleEnterKey);
+            if (passwordInput) passwordInput.addEventListener('keypress', handleEnterKey);
+            if (limitedInput) limitedInput.addEventListener('keypress', handleEnterKey);
+            
+            // Thêm sự kiện Escape để đóng menu ngữ cảnh
+            document.addEventListener('keydown', function(event) {
+                if (event.key === 'Escape') {
+                    hideContextMenu();
+                }
+            });
+            
+            // Thêm sự kiện Enter cho ô tìm kiếm
+            const searchInput = document.getElementById('searchInput');
+            if (searchInput) {
+                searchInput.addEventListener('keypress', function(event) {
+                    if (event.key === 'Enter') {
+                        searchUsers();
+                    }
+                });
+            }
+            
+            // Thêm nút đồng bộ
+            addSyncButton();
+            
+            // Hiển thị địa chỉ IP
+            displayUserIP();
+            
+            // Tải dữ liệu người dùng từ server (không tự động đồng bộ)
+            fetchUserData();
+        };
+
+        // Hàm tìm kiếm người dùng
+        function searchUsers() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const userTableBody = document.getElementById('userTableBody');
+            
+            if (!searchTerm.trim()) {
+                // Nếu không có từ khóa tìm kiếm, hiển thị tất cả người dùng
+                updateTable();
+                return;
+            }
+            
+            // Lọc người dùng theo từ khóa tìm kiếm
+            let currentUsers = [];
+            switch (currentOS) {
+                case 'Windows':
+                    currentUsers = usersWindows;
+                    break;
+                case 'MacOS':
+                    currentUsers = usersMacOS;
+                    break;
+                case 'Android':
+                    currentUsers = usersAndroid;
+                    break;
+                case 'IOS':
+                    currentUsers = usersIOS;
+                    break;
+            }
+            const filteredUsers = currentUsers.filter(user => 
+                user.name.toLowerCase().includes(searchTerm) || 
+                user.account.toLowerCase().includes(searchTerm) || 
+                user.status.toLowerCase().includes(searchTerm) ||
+                user.limited.toLowerCase().includes(searchTerm) ||
+                (user.mac && user.mac.toLowerCase().includes(searchTerm))
+            );
+            
+            // Tạo các hàng cho bảng với người dùng đã lọc
+            const fragment = document.createDocumentFragment();
+            filteredUsers.forEach(user => {
+                // Xác định giá trị hiển thị cho mật khẩu và MAC
+                const displayPassword = showPassword ? user.password : maskPassword(user.password);
+                const displayIP = showIP ? (user.ip || '') : maskIP(user.ip);
+                
+                const newRow = document.createElement('tr');
+                newRow.setAttribute('onclick', 'selectRow(this)');
+                newRow.setAttribute('oncontextmenu', 'showContextMenu(event, this); return false;');
+                newRow.innerHTML = `
+                    <td>${user.name}</td>
+                    <td>${user.email}</td>
+                    <td>${user.account}</td>
+                    <td class="masked-text">${displayPassword}</td>
+                    <td>${user.limited}</td>
+                    <td>${user.status}</td>
+                    <td class="masked-text">${displayIP}</td>
+                `;
+                fragment.appendChild(newRow);
+            });
+            
+            userTableBody.innerHTML = '';
+            userTableBody.appendChild(fragment);
+        }
+
+        // Hàm sắp xếp bảng
+        function sortTable(columnIndex) {
+            // Đảo ngược hướng sắp xếp cho cột được chọn
+            sortDirection[columnIndex] = !sortDirection[columnIndex];
+            
+            // Sắp xếp mảng users
+            let currentUsers = [];
+            switch (currentOS) {
+                case 'Windows':
+                    currentUsers = usersWindows;
+                    break;
+                case 'MacOS':
+                    currentUsers = usersMacOS;
+                    break;
+                case 'Android':
+                    currentUsers = usersAndroid;
+                    break;
+                case 'IOS':
+                    currentUsers = usersIOS;
+                    break;
+            }
+            currentUsers.sort((a, b) => {
+                let valueA, valueB;
+                
+                // Lấy giá trị dựa trên chỉ số cột
+                switch(columnIndex) {
+                    case 0: // Name
+                        valueA = a.name;
+                        valueB = b.name;
+                        break;
+                    case 1: // Email
+                        valueA = a.email;
+                        valueB = b.email;
+                        break;
+                    case 2: // Account
+                        valueA = a.account;
+                        valueB = b.account;
+                        break;
+                    case 4: // Limited
+                        valueA = a.limited;
+                        valueB = b.limited;
+                        break;
+                    case 5: // Status
+                        valueA = a.status;
+                        valueB = b.status;
+                        break;
+                    default:
+                        return 0; // Không sắp xếp các cột khác
+                }
+                
+                // So sánh các giá trị
+                if (valueA < valueB) {
+                    return sortDirection[columnIndex] ? -1 : 1;
+                }
+                if (valueA > valueB) {
+                    return sortDirection[columnIndex] ? 1 : -1;
+                }
+                return 0;
+            });
+            
+            // Cập nhật bảng
+            updateTable();
+            
+            // Lưu trạng thái sắp xếp vào localStorage
+            saveUsersToLocalStorage();
+        }
+
+        // Hàm hiển thị menu ngữ cảnh
+        function showContextMenu(event, row) {
+            // Ngăn chặn menu ngữ cảnh mặc định của trình duyệt
+            event.preventDefault();
+            
+            // Chọn hàng trước khi hiển thị menu
+            selectRow(row);
+            
+            // Lấy menu ngữ cảnh
+            const contextMenu = document.getElementById('contextMenu');
+            
+            // Đặt vị trí của menu ngữ cảnh
+            contextMenu.style.left = event.pageX + 'px';
+            contextMenu.style.top = event.pageY + 'px';
+            
+            // Hiển thị menu ngữ cảnh
+            contextMenu.style.display = 'block';
+            
+            // Thêm sự kiện click vào document để đóng menu khi click ra ngoài
+            document.addEventListener('click', hideContextMenu);
+        }
+        
+        // Hàm ẩn menu ngữ cảnh
+        function hideContextMenu() {
+            document.getElementById('contextMenu').style.display = 'none';
+            document.removeEventListener('click', hideContextMenu);
+        }
+        
+        // Hàm reset người dùng đã chọn từ menu ngữ cảnh
+        function resetSelectedUser() {
+            if (selectedUser) {
+                const userIndex = usersWindows.findIndex(user => user.name === selectedUser.name) ||
+                                 usersMacOS.findIndex(user => user.name === selectedUser.name) ||
+                                 usersAndroid.findIndex(user => user.name === selectedUser.name) ||
+                                 usersIOS.findIndex(user => user.name === selectedUser.name);
+                if (userIndex !== -1) {
+                    if (currentOS === 'Windows') {
+                        usersWindows[userIndex].status = 'Reset';
+                    } else if (currentOS === 'MacOS') {
+                        usersMacOS[userIndex].status = 'Reset';
+                    } else if (currentOS === 'Android') {
+                        usersAndroid[userIndex].status = 'Reset';
+                    } else if (currentOS === 'IOS') {
+                        usersIOS[userIndex].status = 'Reset';
+                    }
+                    saveUsersToLocalStorage();
+                    updateTable(); // Cập nhật lại bảng
+                    selectedUser = null; // Xóa người dùng đã chọn
+                }
+            }
+            hideContextMenu();
+        }
+        
+        // Hàm xóa người dùng đã chọn từ menu ngữ cảnh
+        function deleteSelectedUser() {
+            if (selectedUser) {
+                const userIndex = usersWindows.findIndex(user => user.name === selectedUser.name) ||
+                                 usersMacOS.findIndex(user => user.name === selectedUser.name) ||
+                                 usersAndroid.findIndex(user => user.name === selectedUser.name) ||
+                                 usersIOS.findIndex(user => user.name === selectedUser.name);
+                if (userIndex !== -1) {
+                    if (currentOS === 'Windows') {
+                        usersWindows.splice(userIndex, 1);
+                    } else if (currentOS === 'MacOS') {
+                        usersMacOS.splice(userIndex, 1);
+                    } else if (currentOS === 'Android') {
+                        usersAndroid.splice(userIndex, 1);
+                    } else if (currentOS === 'IOS') {
+                        usersIOS.splice(userIndex, 1);
+                    }
+                    saveUsersToLocalStorage();
+                    updateTable(); // Cập nhật lại bảng
+                    selectedUser = null; // Xóa người dùng đã chọn
+                }
+            }
+            hideContextMenu();
+        }
+        
+        // Hàm chỉnh sửa người dùng đã chọn
+        function editSelectedUser() {
+            if (!selectedUser) {
+                return;
+            }
+            
+            // Tạo modal chỉnh sửa nếu chưa tồn tại
+            if (!document.getElementById('editUserModal')) {
+                const modalHTML = `
+                <div id="editUserModal" class="modal">
+                    <div class="modal-content">
+                        <span class="close" onclick="closeModal('editUserModal')">&times;</span>
+                        <h2 style="color: red; text-align: center;">Edit User</h2>
+                        <div class="form-group">
+                            <label for="editNameUser">Name User:</label>
+                            <input type="text" id="editNameUser" placeholder="Enter name" autocomplete="off">
+                        </div>
+                        <div class="form-group">
+                            <label for="editAccount">Account:</label>
+                            <input type="text" id="editAccount" placeholder="Enter account" autocomplete="off">
+                        </div>
+                        <div class="form-group">
+                            <label for="editPassword">Password:</label>
+                            <input type="text" id="editPassword" placeholder="Enter password" autocomplete="off">
+                        </div>
+                        <div class="form-group">
+                            <label for="editLimited">Limited (days):</label>
+                            <div style="display: flex; align-items: center;">
+                                <input type="number" id="editLimited" placeholder="Enter days or 0 for unlimited" autocomplete="off" style="flex: 1; margin-right: 5px;" min="0">
+                                <span style="color: white;">day(s)</span>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="editStatus">Status:</label>
+                            <select id="editStatus" style="width: 100%; padding: 8px; box-sizing: border-box; border-radius: 5px; border: 1px solid #ccc;">
+                                <option value="Active">Active</option>
+                                <option value="Inactive">Inactive</option>
+                                <option value="Reset">Reset</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="editIP">IP Address:</label>
+                            <input type="text" id="editIP" placeholder="Enter IP address" autocomplete="off">
+                        </div>
+                        <button onclick="saveEditUser()">Save Changes</button>
+                    </div>
+                </div>
+                `;
+                
+                // Thêm modal vào body
+                document.body.insertAdjacentHTML('beforeend', modalHTML);
+            }
+            
+            // Điền thông tin người dùng vào form
+            document.getElementById('editNameUser').value = selectedUser.name;
+            document.getElementById('editAccount').value = selectedUser.account;
+            document.getElementById('editPassword').value = selectedUser.password;
+            document.getElementById('editIP').value = selectedUser.ip || '';
+            
+            // Xử lý giá trị limited
+            let limitedValue = selectedUser.limited;
+            if (limitedValue === 'Unlimited') {
+                document.getElementById('editLimited').value = '0';
+            } else {
+                // Trích xuất số từ chuỗi (ví dụ: "30 days" -> 30)
+                const match = limitedValue.match(/(\d+)/);
+                document.getElementById('editLimited').value = match ? match[0] : '';
+            }
+            
+            document.getElementById('editStatus').value = selectedUser.status;
+            
+            // Hiển thị modal
+            document.getElementById('editUserModal').style.display = 'block';
+            
+            // Đóng menu ngữ cảnh
+            hideContextMenu();
+        }
+        
+        // Hàm lưu thông tin người dùng sau khi chỉnh sửa
+        function saveEditUser() {
+            const editNameUser = document.getElementById('editNameUser').value;
+            const editAccount = document.getElementById('editAccount').value;
+            const editPassword = document.getElementById('editPassword').value;
+            let editLimitedValue = document.getElementById('editLimited').value;
+            const editStatus = document.getElementById('editStatus').value;
+            const editIP = document.getElementById('editIP').value;
+            
+            // Kiểm tra các trường bắt buộc
+            if (!editNameUser.trim() || !editAccount.trim() || !editPassword.trim()) {
+                alert("Vui lòng điền đầy đủ thông tin");
+                return;
+            }
+            
+            // Xử lý giá trị limited
+            if (!editLimitedValue || editLimitedValue === '0') {
+                editLimitedValue = 'Unlimited';
+            } else {
+                // Sử dụng "day" cho 1 ngày và "days" cho nhiều ngày
+                const days = parseInt(editLimitedValue);
+                editLimitedValue = days + (days === 1 ? ' day' : ' days');
+            }
+            
+            // Tìm và cập nhật người dùng trong mảng
+            const userIndex = usersWindows.findIndex(user => user.name === selectedUser.name) ||
+                             usersMacOS.findIndex(user => user.name === selectedUser.name) ||
+                             usersAndroid.findIndex(user => user.name === selectedUser.name) ||
+                             usersIOS.findIndex(user => user.name === selectedUser.name);
+            if (userIndex !== -1) {
+                if (currentOS === 'Windows') {
+                    usersWindows[userIndex] = {
+                        name: editNameUser,
+                        account: editAccount,
+                        password: editPassword,
+                        limited: editLimitedValue,
+                        status: editStatus,
+                        ip: editIP
+                    };
+                } else if (currentOS === 'MacOS') {
+                    usersMacOS[userIndex] = {
+                        name: editNameUser,
+                        account: editAccount,
+                        password: editPassword,
+                        limited: editLimitedValue,
+                        status: editStatus,
+                        ip: editIP
+                    };
+                } else if (currentOS === 'Android') {
+                    usersAndroid[userIndex] = {
+                        name: editNameUser,
+                        account: editAccount,
+                        password: editPassword,
+                        limited: editLimitedValue,
+                        status: editStatus,
+                        ip: editIP
+                    };
+                } else if (currentOS === 'IOS') {
+                    usersIOS[userIndex] = {
+                        name: editNameUser,
+                        account: editAccount,
+                        password: editPassword,
+                        limited: editLimitedValue,
+                        status: editStatus,
+                        ip: editIP
+                    };
+                }
+                
+                // Cập nhật selectedUser
+                selectedUser = usersWindows[userIndex] || usersMacOS[userIndex] || usersAndroid[userIndex] || usersIOS[userIndex];
+                
+                // Lưu vào localStorage
+                saveUsersToLocalStorage();
+                
+                // Cập nhật giao diện
+                updateTable();
+                
+                // Đồng bộ chỉ hệ điều hành hiện tại
+                syncDataWithServer(currentOS);
+                
+                // Đóng modal
+                closeModal('editUserModal');
+            }
+        }
+        
+        // Hàm chuyển đổi trạng thái ẩn/hiện của mật khẩu
+        function togglePasswordVisibility(event) {
+            // Đảo ngược trạng thái hiển thị mật khẩu
+            showPassword = !showPassword;
+            
+            // Cập nhật lại bảng
+            updateTable();
+        }
+        
+        // Hàm chuyển đổi trạng thái ẩn/hiện của IP
+        function toggleIPVisibility(event) {
+            // Đảo ngược trạng thái hiển thị IP
+            showIP = !showIP;
+            
+            // Cập nhật lại bảng
+            updateTable();
+        }
+        
+        // Hàm tạo chuỗi ẩn cho mật khẩu
+        function maskPassword(password) {
+            return password; // Hiển thị mật khẩu đầy đủ
+        }
+        
+        // Hàm tạo chuỗi ẩn cho IP
+        function maskIP(ip) {
+            return ip; // Hiển thị IP đầy đủ
+        }
+
+        // Cập nhật hàm authenticateUser để đồng bộ dữ liệu trước khi xác thực
+        function authenticateUser() {
+            const username = document.querySelector('input[placeholder="Admin Account"]').value;
+            const password = document.querySelector('input[placeholder="Admin Password"]').value;
+
+            // Đồng bộ dữ liệu trước khi xác thực (chỉ đồng bộ hệ điều hành hiện tại)
+            syncDataWithServer(currentOS);
+            
+            // Sau đó gửi yêu cầu xác thực
+            setTimeout(() => {
+                fetch('/authenticate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ username, password })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === "success") {
+                    alert(data.message);
+                        isLoggedIn = true;
+                        isAdminLoggedIn = true;
+                        document.getElementById('adminLabel').style.display = 'block';
+                        // Hiển thị mật khẩu và IP sau khi đăng nhập
+                        showPassword = true;
+                        showIP = true;
+                        updateTable();
+                } else {
+                    alert(data.message);
+                }
+            })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Lỗi kết nối đến máy chủ. Vui lòng thử lại sau!');
+                });
+            }, 500); // Đợi 500ms để đảm bảo đồng bộ dữ liệu hoàn tất
+        }
+
+        // Thêm nút đồng bộ dữ liệu vào giao diện
+        function addSyncButton() {
+            // Kiểm tra xem nút đã tồn tại chưa
+            if (document.getElementById('syncButton')) return;
+            
+            // Tạo nút đồng bộ
+            const syncButton = document.createElement('button');
+            syncButton.id = 'syncButton';
+            syncButton.textContent = 'Đồng bộ dữ liệu';
+            syncButton.onclick = function() {
+                syncDataWithServer(currentOS); // Chỉ đồng bộ hệ điều hành hiện tại
+            };
+            syncButton.style.marginTop = '10px';
+            syncButton.style.backgroundColor = '#4CAF50';
+            syncButton.style.color = 'white';
+            
+            // Thêm nút vào sidebar
+            const sidebar = document.querySelector('.sidebar');
+            if (sidebar) {
+                sidebar.appendChild(syncButton);
+            }
+        }
+
+        // Gọi hàm thêm nút khi trang được tải
+        window.addEventListener('load', addSyncButton);
+
+        // Hàm để lấy địa chỉ IP từ Local Storage và hiển thị
+        function displayUserIP() {
+            const userIP = localStorage.getItem('userIP');
+            if (userIP) {
+                document.getElementById('userIPDisplay').textContent = `Địa chỉ IP: ${userIP}`;
+            }
+        }
+
+        // Gọi hàm này khi trang được tải
+        window.addEventListener('load', displayUserIP);
+
+        // Hàm đọc danh sách người dùng từ localStorage
+        function loadUsersFromLocalStorage() {
+            const savedUsersWindows = localStorage.getItem('keyAuthUsersWindows');
+            const savedUsersMacOS = localStorage.getItem('keyAuthUsersMacOS');
+            const savedUsersAndroid = localStorage.getItem('keyAuthUsersAndroid');
+            const savedUsersIOS = localStorage.getItem('keyAuthUsersIOS');
+
+            usersWindows = savedUsersWindows ? JSON.parse(savedUsersWindows) : [];
+            usersMacOS = savedUsersMacOS ? JSON.parse(savedUsersMacOS) : [];
+            usersAndroid = savedUsersAndroid ? JSON.parse(savedUsersAndroid) : [];
+            usersIOS = savedUsersIOS ? JSON.parse(savedUsersIOS) : [];
+
+            // Kiểm tra và thêm trường MAC nếu chưa có
+            [usersWindows, usersMacOS, usersAndroid, usersIOS].forEach(users => {
+                users.forEach(user => {
+                    if (!user.mac) {
+                        user.mac = generateRandomMAC();
+                    }
+                    
+                    // Cập nhật định dạng limited nếu cần
+                    if (user.limited && user.limited !== 'Unlimited') {
+                        // Trích xuất số từ chuỗi (ví dụ: "30 day" -> 30)
+                        const match = user.limited.match(/(\d+)/);
+                        if (match) {
+                            const days = parseInt(match[0]);
+                            user.limited = days + (days === 1 ? ' day' : ' days');
+                        }
+                    }
+                });
+            });
+
+            // Lưu lại để cập nhật dữ liệu
+            saveUsersToLocalStorage();
+        }
+        
+        // Hàm tạo địa chỉ MAC ngẫu nhiên
+        function generateRandomMAC() {
+            const hexDigits = "0123456789ABCDEF";
+            let mac = "";
+            for (let i = 0; i < 6; i++) {
+                if (i > 0) mac += ":";
+                mac += hexDigits.charAt(Math.floor(Math.random() * 16));
+                mac += hexDigits.charAt(Math.floor(Math.random() * 16));
+            }
+            return mac;
+        }
+
+        function showContent(content) {
+            // Ngăn chặn hành vi mặc định nếu được gọi từ sự kiện
+            if (event) {
+                event.preventDefault();
+            }
+            
+            // Cập nhật URL mà không tải lại trang
+            if (history.pushState) {
+                const newurl = window.location.protocol + "//" + window.location.host + window.location.pathname + '#/' + content;
+                window.history.pushState({path: newurl}, '', newurl);
+            }
+            
+            currentOS = content;
+            const contentDiv = document.querySelector('.content');
+            contentDiv.innerHTML = `<h1>${content}</h1>`;
+            if (content === 'Windows' || content === 'MacOS' || content === 'Android' || content === 'IOS') {
+                // Đọc danh sách người dùng từ localStorage khi chuyển đổi panel
+                loadUsersFromLocalStorage();
+                
+                contentDiv.innerHTML += `
+                    <div style="margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <button onclick="openModal('createUserModal'); return false;">Create User</button>
+                            <button onclick="resetUser(); return false;">Reset User</button>
+                            <button onclick="resetAllUsers(); return false;">Reset All Users</button>
+                            <button onclick="deleteUser(); return false;">Delete User</button>
+                            <button onclick="syncDataWithServer('${content}'); return false;" style="background-color: #4CAF50;">Đồng Bộ ${content}</button>
+                        </div>
+                        <div style="display: flex; align-items: center;">
+                            <input type="text" id="searchInput" placeholder="Search users..." style="padding: 8px; border-radius: 5px; border: 1px solid #ccc; margin-right: 5px;">
+                            <button onclick="searchUsers(); return false;">Search</button>
+                        </div>
+                    </div>
+                    <table id="userTable">
+                        <thead>
+                            <tr>
+                                <th onclick="sortTable(0); return false;">Name User ↕</th>
+                                <th onclick="sortTable(1); return false;">Email ↕</th>
+                                <th onclick="sortTable(2); return false;">Account ↕</th>
+                                <th class="no-sort">
+                                    Password
+                                    <span class="eye-icon" onclick="togglePasswordVisibility(event); return false;">👁️</span>
+                                </th>
+                                <th onclick="sortTable(4); return false;">Limited ↕</th>
+                                <th onclick="sortTable(5); return false;">Status ↕</th>
+                                <th class="no-sort">
+                                    IP
+                                    <span class="eye-icon" onclick="toggleIPVisibility(event); return false;">👁️</span>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody id="userTableBody">
+                            ${generateTableRows()}
+                        </tbody>
+                    </table>
+                `;
+                
+                // Cập nhật bảng sau khi tải dữ liệu
+                updateTable();
+            }
+            
+            return false;
+        }
+
+        // Hàm tạo các hàng cho bảng
+        function generateTableRows() {
+            const fragment = document.createDocumentFragment();
+            let currentUsers = [];
+            switch (currentOS) {
+                case 'Windows':
+                    currentUsers = usersWindows;
+                    break;
+                case 'MacOS':
+                    currentUsers = usersMacOS;
+                    break;
+                case 'Android':
+                    currentUsers = usersAndroid;
+                    break;
+                case 'IOS':
+                    currentUsers = usersIOS;
+                    break;
+            }
+            currentUsers.forEach(user => {
+                // Xác định giá trị hiển thị cho mật khẩu và MAC
+                const displayPassword = showPassword ? user.password : maskPassword(user.password);
+                const displayIP = showIP ? (user.ip || '') : maskIP(user.ip);
+                
+                const newRow = document.createElement('tr');
+                newRow.setAttribute('onclick', 'selectRow(this)');
+                newRow.setAttribute('oncontextmenu', 'showContextMenu(event, this); return false;');
+                newRow.innerHTML = `
+                    <td>${user.name}</td>
+                    <td>${user.email}</td>
+                    <td>${user.account}</td>
+                    <td class="masked-text" onclick="togglePasswordVisibility(event)">${displayPassword}</td>
+                    <td>${user.limited}</td>
+                    <td>${user.status}</td>
+                    <td class="masked-text">${displayIP}</td>
+                `;
+                fragment.appendChild(newRow);
+            });
+            return fragment;
+        }
+
+        // Hàm cập nhật bảng
+        function updateTable() {
+            const userTableBody = document.getElementById('userTableBody');
+            userTableBody.innerHTML = '';
+            userTableBody.appendChild(generateTableRows());
+        }
+
+        // Hàm chọn hàng
+        function selectRow(row) {
+            // Xóa lớp selected từ tất cả các hàng
+            const allRows = document.querySelectorAll('#userTableBody tr');
+            allRows.forEach(r => r.classList.remove('selected'));
+            
+            // Thêm lớp selected vào hàng được chọn
+            row.classList.add('selected');
+            
+            // Lấy thông tin người dùng từ hàng được chọn
+            const name = row.cells[0].textContent;
+            const account = row.cells[2].textContent;
+            const passwordCell = row.cells[3];
+            const limited = row.cells[4].textContent;
+            const status = row.cells[5].textContent;
+            const ipCell = row.cells[6];
+            
+            // Hiển thị mật khẩu và MAC nếu có quyền admin
+            if (isAdminLoggedIn) {
+                passwordCell.textContent = selectedUser.password;
+                ipCell.textContent = selectedUser.ip;
+            }
+            
+            // Lưu thông tin người dùng được chọn vào biến toàn cục để sử dụng sau này
+            selectedUser = {
+                name: name,
+                account: account,
+                password: passwordCell.textContent,
+                limited: limited,
+                status: status,
+                ip: ipCell.textContent
+            };
+            
+            // Hiển thị thông tin người dùng đã chọn
+            const selectedUserInfo = document.getElementById('selectedUserInfo');
+            if (selectedUserInfo) {
+                selectedUserInfo.style.display = 'block';
+                document.getElementById('selectedName').textContent = name;
+                document.getElementById('selectedAccount').textContent = account;
+                document.getElementById('selectedLimited').textContent = limited;
+                document.getElementById('selectedStatus').textContent = status;
+            }
+        }
+
+        // Hàm thêm người dùng mới vào bảng
+        function addUserToTable(name, email, account, password, limited) {
+            // Tạo địa chỉ MAC ngẫu nhiên cho người dùng mới
+            const mac = generateRandomMAC();
+            
+            // Thêm người dùng mới vào đầu mảng
+            const newUser = {
+                name: name,
+                email: email || '',
+                account: account,
+                password: password,
+                limited: limited,
+                status: 'Active',
+                mac: mac,
+                ip: '' // Initialize IP as an empty string
+            };
+            
+            console.log('Thêm người dùng mới:', newUser);
+            
+            // Thêm vào mảng tương ứng với hệ điều hành hiện tại
+            switch (currentOS) {
+                case 'Windows':
+                    usersWindows.unshift(newUser);
+                    break;
+                case 'MacOS':
+                    usersMacOS.unshift(newUser);
+                    break;
+                case 'Android':
+                    usersAndroid.unshift(newUser);
+                    break;
+                case 'IOS':
+                    usersIOS.unshift(newUser);
+                    break;
+            }
+
+            // Lưu danh sách người dùng vào localStorage
+            localStorage.setItem('keyAuthUsersWindows', JSON.stringify(usersWindows));
+            localStorage.setItem('keyAuthUsersMacOS', JSON.stringify(usersMacOS));
+            localStorage.setItem('keyAuthUsersAndroid', JSON.stringify(usersAndroid));
+            localStorage.setItem('keyAuthUsersIOS', JSON.stringify(usersIOS));
+            
+            // Cập nhật bảng
+            updateTable();
+            
+            // Hiển thị thông báo
+            showNotification('Đã thêm người dùng mới: ' + name, 'success');
+            
+            // Đồng bộ dữ liệu với server sau khi thêm người dùng (chỉ đồng bộ hệ điều hành hiện tại)
+            setTimeout(() => {
+                syncDataWithServer(currentOS);
+            }, 500);
+        }
+
+        // Hàm reset người dùng
+        function resetUser() {
+            let name;
+            
+            if (selectedUser) {
+                // Nếu đã chọn người dùng, sử dụng người dùng đó
+                name = selectedUser.name;
+            } else {
+                // Nếu chưa chọn người dùng, hiển thị prompt để nhập tên
+                name = prompt("Nhập tên người dùng cần reset:");
+                if (!name) return; // Nếu không nhập tên, thoát khỏi hàm
+            }
+            
+            const userIndex = usersWindows.findIndex(user => user.name === name) ||
+                             usersMacOS.findIndex(user => user.name === name) ||
+                             usersAndroid.findIndex(user => user.name === name) ||
+                             usersIOS.findIndex(user => user.name === name);
+            if (userIndex !== -1) {
+                if (currentOS === 'Windows') {
+                    usersWindows[userIndex].status = 'Reset';
+                } else if (currentOS === 'MacOS') {
+                    usersMacOS[userIndex].status = 'Reset';
+                } else if (currentOS === 'Android') {
+                    usersAndroid[userIndex].status = 'Reset';
+                } else if (currentOS === 'IOS') {
+                    usersIOS[userIndex].status = 'Reset';
+                }
+                saveUsersToLocalStorage();
+                updateTable(); // Cập nhật lại bảng
+                selectedUser = null; // Xóa người dùng đã chọn
+                
+                // Đồng bộ chỉ hệ điều hành hiện tại
+                syncDataWithServer(currentOS);
+            } else {
+                alert(`Không tìm thấy người dùng: ${name}`);
+            }
+        }
+
+        // Hàm reset tất cả người dùng
+        function resetAllUsers() {
+            if (currentOS === 'Windows') {
+                usersWindows.forEach(user => {
+                    user.status = 'Reset';
+                });
+            } else if (currentOS === 'MacOS') {
+                usersMacOS.forEach(user => {
+                    user.status = 'Reset';
+                });
+            } else if (currentOS === 'Android') {
+                usersAndroid.forEach(user => {
+                    user.status = 'Reset';
+                });
+            } else if (currentOS === 'IOS') {
+                usersIOS.forEach(user => {
+                    user.status = 'Reset';
+                });
+            }
+            saveUsersToLocalStorage();
+            updateTable(); // Cập nhật lại bảng
+            
+            // Đồng bộ chỉ hệ điều hành hiện tại
+            syncDataWithServer(currentOS);
+        }
+
+        // Hàm xóa người dùng
+        function deleteUser() {
+            const name = prompt("Nhập tên người dùng cần xóa:");
+            if (name) {
+                let userIndex = -1;
+                if (currentOS === 'Windows') {
+                    userIndex = usersWindows.findIndex(user => user.name.localeCompare(name, 'vi', { sensitivity: 'base' }) === 0);
+                    if (userIndex !== -1) usersWindows.splice(userIndex, 1);
+                } else if (currentOS === 'MacOS') {
+                    userIndex = usersMacOS.findIndex(user => user.name.localeCompare(name, 'vi', { sensitivity: 'base' }) === 0);
+                    if (userIndex !== -1) usersMacOS.splice(userIndex, 1);
+                } else if (currentOS === 'Android') {
+                    userIndex = usersAndroid.findIndex(user => user.name.localeCompare(name, 'vi', { sensitivity: 'base' }) === 0);
+                    if (userIndex !== -1) usersAndroid.splice(userIndex, 1);
+                } else if (currentOS === 'IOS') {
+                    userIndex = usersIOS.findIndex(user => user.name.localeCompare(name, 'vi', { sensitivity: 'base' }) === 0);
+                    if (userIndex !== -1) usersIOS.splice(userIndex, 1);
+                }
+                if (userIndex !== -1) {
+                    saveUsersToLocalStorage();
+                    updateTable(); // Cập nhật lại bảng
+                    alert(`Đã xóa người dùng: ${name}`);
+                    
+                    // Đồng bộ chỉ hệ điều hành hiện tại
+                    syncDataWithServer(currentOS);
+                } else {
+                    alert(`Không tìm thấy người dùng: ${name}`);
+                }
+            }
+        }
+
+        // Hàm mở modal
+        function openModal(modalId) {
+            document.getElementById(modalId).style.display = "block";
+            // Xóa cảnh báo khi mở modal
+            clearWarnings();
+            // Đặt focus vào trường đầu tiên
+            setTimeout(() => {
+                document.getElementById('nameUser').focus();
+            }, 100);
+        }
+
+        // Hàm đóng modal
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = "none";
+        }
+
+        // Hàm xóa cảnh báo
+        function clearWarnings() {
+            const inputs = document.querySelectorAll('.form-group input, .form-group select');
+            inputs.forEach(input => {
+                input.classList.remove('warning');
+                input.classList.remove('warning-border');
+                const warningIcon = input.parentElement.querySelector('.warning-icon');
+                if (warningIcon) {
+                    warningIcon.remove();
+                }
+            });
+        }
+
+        // Hàm kiểm tra và hiển thị cảnh báo
+        function validateForm() {
+            const nameUser = document.getElementById('nameUser');
+            const account = document.getElementById('account');
+            const password = document.getElementById('password');
+            const limited = document.getElementById('limited');
+            
+            let isValid = true;
+            clearWarnings();
+
+            // Kiểm tra tất cả các trường và hiển thị cảnh báo cho tất cả các trường thiếu thông tin
+            if (!nameUser.value.trim()) {
+                showWarning(nameUser);
+                isValid = false;
+            }
+            
+            if (!account.value.trim()) {
+                showWarning(account);
+                isValid = false;
+            }
+            
+            if (!password.value.trim()) {
+                showWarning(password);
+                isValid = false;
+            }
+            
+            // Kiểm tra giá trị limited phải là số không âm
+            if (limited.value.trim() !== '' && (isNaN(limited.value) || parseInt(limited.value) < 0)) {
+                showWarning(limited);
+                isValid = false;
+            }
+
+            // Đặt focus vào trường đầu tiên thiếu thông tin
+            if (!nameUser.value.trim()) {
+                nameUser.focus();
+            } else if (!account.value.trim()) {
+                account.focus();
+            } else if (!password.value.trim()) {
+                password.focus();
+            } else if (limited.value.trim() !== '' && (isNaN(limited.value) || parseInt(limited.value) < 0)) {
+                limited.focus();
+            }
+
+            return isValid;
+        }
+
+        // Hàm hiển thị cảnh báo
+        function showWarning(input) {
+            input.classList.add('warning');
+            const warningIcon = document.createElement('span');
+            warningIcon.className = 'warning-icon';
+            warningIcon.textContent = '!';
+            input.parentElement.appendChild(warningIcon);
+            
+            // Thêm sự kiện để xóa animation sau khi nó hoàn thành
+            input.addEventListener('animationend', function() {
+                input.classList.remove('warning');
+                input.classList.add('warning-border'); // Giữ lại viền đỏ
+            }, {once: true}); // {once: true} đảm bảo sự kiện chỉ được kích hoạt một lần
+        }
+
+        // Hàm xử lý khi người dùng nhấn vào nút Create trong modal
+        function createUser() {
+            // Ngăn chặn hành vi mặc định
+            event.preventDefault();
+            
+            if (validateForm()) {
+                const nameUser = document.getElementById('nameUser').value;
+                const email = document.getElementById('email').value;
+                const account = document.getElementById('account').value;
+                const password = document.getElementById('password').value;
+                let limitedValue = document.getElementById('limited').value;
+                
+                // Xử lý giá trị limited
+                if (!limitedValue || limitedValue === '0') {
+                    limitedValue = 'Unlimited';
+                } else {
+                    // Sử dụng "day" cho 1 ngày và "days" cho nhiều ngày
+                    const days = parseInt(limitedValue);
+                    limitedValue = days + (days === 1 ? ' day' : ' days');
+                }
+                
+                // Thêm người dùng mới vào bảng
+                addUserToTable(nameUser, email, account, password, limitedValue);
+                
+                // Xóa giá trị trong các trường nhập liệu
+                document.getElementById('nameUser').value = '';
+                document.getElementById('email').value = '';
+                document.getElementById('account').value = '';
+                document.getElementById('password').value = '';
+                document.getElementById('limited').value = ''; // Xóa giá trị
+                
+                closeModal('createUserModal');
+            }
+        }
+
+        // Hàm xử lý khi người dùng nhấn Enter
+        function handleEnterKey(event) {
+            if (event.key === 'Enter') {
+                createUser();
+            }
+        }
+
+        // Hàm tải dữ liệu người dùng từ server và cập nhật localStorage
+        function fetchUserData() {
+            // Ngăn chặn hành vi mặc định nếu được gọi từ sự kiện
+            if (event) {
+                event.preventDefault();
+            }
+            
+            fetch('/users')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Lỗi kết nối: ' + response.status);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Đã nhận dữ liệu từ server:', data);
+                    
+                    // Cập nhật bảng người dùng với dữ liệu mới nhất
+                    if (data.usersWindows) usersWindows = data.usersWindows;
+                    if (data.usersMacOS) usersMacOS = data.usersMacOS;
+                    if (data.usersAndroid) usersAndroid = data.usersAndroid;
+                    if (data.usersIOS) usersIOS = data.usersIOS;
+                    
+                    // Lưu vào localStorage
+                    localStorage.setItem('keyAuthUsersWindows', JSON.stringify(usersWindows));
+                    localStorage.setItem('keyAuthUsersMacOS', JSON.stringify(usersMacOS));
+                    localStorage.setItem('keyAuthUsersAndroid', JSON.stringify(usersAndroid));
+                    localStorage.setItem('keyAuthUsersIOS', JSON.stringify(usersIOS));
+                    
+                    // Cập nhật bảng
+                    updateTable();
+                    
+                    showNotification('Đã tải dữ liệu từ server', 'success');
+                })
+                .catch(error => {
+                    console.error('Lỗi khi lấy dữ liệu người dùng:', error);
+                    showNotification('Lỗi khi tải dữ liệu: ' + error.message, 'error');
+                });
+        }
+
+        // Sửa đổi các form để ngăn chặn hành vi submit mặc định
+        document.addEventListener('DOMContentLoaded', function() {
+            // Ngăn chặn tất cả các form submit
+            const forms = document.querySelectorAll('form');
+            forms.forEach(form => {
+                form.addEventListener('submit', function(event) {
+                    event.preventDefault();
+                });
+            });
+            
+            // Ngăn chặn các nút có thể gây tải lại trang
+            const buttons = document.querySelectorAll('button');
+            buttons.forEach(button => {
+                if (!button.hasAttribute('type')) {
+                    button.setAttribute('type', 'button');
+                }
+            });
+            
+            // Ngăn chặn các thẻ a gây tải lại trang
+            const links = document.querySelectorAll('a');
+            links.forEach(link => {
+                link.addEventListener('click', function(event) {
+                    if (link.getAttribute('href') === '#' || link.getAttribute('href') === '') {
+                        event.preventDefault();
+                    }
+                });
+            });
+        });
+    </script>
+</head>
+<body>
+    <div class="sidebar">
+        <h2>KeyAuth</h2>
+        <button onclick="showContent('Windows'); return false;">Windows</button>
+        <button onclick="showContent('MacOS'); return false;">MacOS</button>
+        <button onclick="showContent('Android'); return false;">Android</button>
+        <button onclick="showContent('IOS'); return false;">IOS</button>
+        <h2>Result Table</h2>
+        <button onclick="showContent('MD5'); return false;">MD5</button>
+        <button onclick="showContent('Normal'); return false;">Normal</button>
+        <h2>Admin Login</h2>
+        <input type="text" placeholder="Admin Account" autocomplete="off" style="margin-bottom: 10px; padding: 5px; border-radius: 5px; border: 1px solid #ccc;">
+        <input type="password" placeholder="Admin Password" autocomplete="off" style="margin-bottom: 10px; padding: 5px; border-radius: 5px; border: 1px solid #ccc;">
+        <button onclick="authenticateUser(); return false;">Đăng Nhập</button>
+        <div id="adminLabel" style="display: none; color: red; margin-top: 10px;">ADMIN</div>
+    </div>
+    <div class="divider"></div> <!-- Đường kẻ màu đỏ -->
+    <div class="content">
+        <h1>KeyAuth</h1>
+        <p>Đây là một trang web với nền tối và màu chữ sáng.</p>
+        <div id="userIPDisplay"></div> <!-- Thêm phần tử để hiển thị địa chỉ IP -->
+    </div>
+
+    <!-- Modal Create User -->
+    <div id="createUserModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('createUserModal')">&times;</span>
+            <h2 style="color: red; text-align: center;">Create User</h2>
+            <div class="form-group">
+                <label for="nameUser">Name User:</label>
+                <input type="text" id="nameUser" placeholder="Enter name" autocomplete="off">
+            </div>
+            <div class="form-group">
+                <label for="email">Email:</label>
+                <input type="email" id="email" placeholder="Enter email" autocomplete="off">
+            </div>
+            <div class="form-group">
+                <label for="account">Account:</label>
+                <input type="text" id="account" placeholder="Enter account" autocomplete="off">
+            </div>
+            <div class="form-group">
+                <label for="password">Password:</label>
+                <input type="text" id="password" placeholder="Enter password" autocomplete="off">
+            </div>
+            <div class="form-group">
+                <label for="limited">Limited (days):</label>
+                <div style="display: flex; align-items: center;">
+                    <input type="number" id="limited" placeholder="Enter days or 0 for unlimited" autocomplete="off" style="flex: 1; margin-right: 5px;" min="0">
+                    <span style="color: white;">day(s)</span>
+                </div>
+            </div>
+            <button onclick="createUser()">Create</button>
+        </div>
+    </div>
+    
+    <!-- Context Menu -->
+    <div id="contextMenu" class="context-menu">
+        <div class="context-menu-item" onclick="editSelectedUser()">Edit User</div>
+        <div class="context-menu-item" onclick="resetSelectedUser()">Reset User</div>
+        <div class="context-menu-item" onclick="deleteSelectedUser()">Delete User</div>
+    </div>
+</body>
+</html> 

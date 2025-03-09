@@ -1,0 +1,17 @@
+.warning {
+    border: 1px solid red !important;
+    animation: shake 1s ease-in-out; /* Thay đổi thời gian và loại bỏ infinite */
+}
+
+/* Hiệu ứng nâng lên hạ xuống */
+@keyframes shake {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    25% {
+        transform: translateY(-3px);
+    }
+    75% {
+        transform: translateY(3px);
+    }
+}

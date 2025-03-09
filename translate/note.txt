@@ -1,0 +1,5 @@
+khi ấn vô create user hiện ra 1 bảng nhỏ để điền thông vào gồm:
+Name User
+Account	
+Password
+Limited

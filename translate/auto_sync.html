@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Tự động đồng bộ dữ liệu</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .log {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            height: 300px;
+            overflow-y: auto;
+        }
+        .success {
+            color: green;
+        }
+        .error {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <h1>Tự động đồng bộ dữ liệu</h1>
+    <p>Trang này sẽ tự động đồng bộ dữ liệu từ localStorage của trang web @key.html với server mỗi 10 giây.</p>
+    
+    <div class="log" id="log"></div>
+    
+    <script>
+        const logElement = document.getElementById('log');
+        
+        // Hàm ghi log
+        function log(message, isError = false) {
+            const now = new Date().toLocaleTimeString();
+            const logItem = document.createElement('div');
+            logItem.className = isError ? 'error' : 'success';
+            logItem.textContent = `[${now}] ${message}`;
+            logElement.appendChild(logItem);
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+        
+        // Hàm đồng bộ dữ liệu từ localStorage
+        function syncFromLocalStorage() {
+            log('Đang đồng bộ dữ liệu...');
+            
+            // Đọc dữ liệu từ localStorage
+            const userData = {
+                usersWindows: JSON.parse(localStorage.getItem('keyAuthUsersWindows') || '[]'),
+                usersMacOS: JSON.parse(localStorage.getItem('keyAuthUsersMacOS') || '[]'),
+                usersAndroid: JSON.parse(localStorage.getItem('keyAuthUsersAndroid') || '[]'),
+                usersIOS: JSON.parse(localStorage.getItem('keyAuthUsersIOS') || '[]')
+            };
+            
+            // Gửi dữ liệu đến server
+            fetch('http://localhost:5000/sync_data', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(userData)
+            })
+            .then(response => {
+                // Kiểm tra kiểu nội dung của phản hồi
+                const contentType = response.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    return response.json();
+                } else {
+                    // Nếu không phải JSON, đọc dưới dạng text
+                    return response.text().then(text => {
+                        throw new Error(`Server trả về không phải JSON: ${text.substring(0, 100)}...`);
+                    });
+                }
+            })
+            .then(data => {
+                log(`Đồng bộ thành công! ${data.message}`);
+            })
+            .catch(error => {
+                log(`Lỗi khi đồng bộ dữ liệu: ${error.message}`, true);
+                console.error('Chi tiết lỗi:', error);
+            });
+        }
+        
+        // Đồng bộ dữ liệu ngay khi trang được tải
+        syncFromLocalStorage();
+        
+        // Thiết lập đồng bộ dữ liệu định kỳ mỗi 10 giây
+        setInterval(syncFromLocalStorage, 10000);
+        
+        log('Đã khởi động tự động đồng bộ dữ liệu');
+    </script>
+</body>
+</html> 

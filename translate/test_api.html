@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test API</title>
+</head>
+<body>
+    <h2>Test Authentication API</h2>
+    <button onclick="testAPI()">Test API</button>
+    <div id="result" style="margin-top: 20px; padding: 10px; border: 1px solid #ccc;"></div>
+
+    <script>
+        function testAPI() {
+            document.getElementById('result').innerHTML = 'Đang gửi yêu cầu...';
+            
+            fetch('http://localhost:5000/authenticate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    username: 'a',
+                    password: 'a'
+                })
+            })
+            .then(response => {
+                document.getElementById('result').innerHTML += '<br>Nhận được phản hồi với status: ' + response.status;
+                return response.json();
+            })
+            .then(data => {
+                document.getElementById('result').innerHTML = 
+                    '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+            })
+            .catch(error => {
+                document.getElementById('result').innerHTML = 
+                    '<pre style="color: red;">Error: ' + error.message + '</pre>' +
+                    '<p>Nguyên nhân có thể:</p>' +
+                    '<ul>' +
+                    '<li>Server không chạy - Kiểm tra xem server có đang chạy trên cổng 5000 không</li>' +
+                    '<li>Vấn đề CORS - Server cần cấu hình CORS đúng</li>' +
+                    '<li>Lỗi mạng - Kiểm tra kết nối mạng</li>' +
+                    '</ul>';
+                
+                console.error('Lỗi chi tiết:', error);
+            });
+        }
+        
+        // Kiểm tra xem server có hoạt động không
+        fetch('http://localhost:5000/')
+            .then(response => {
+                if (response.ok) {
+                    document.getElementById('result').innerHTML = 'Server đang hoạt động. Nhấn nút "Test API" để kiểm tra xác thực.';
+                }
+            })
+            .catch(error => {
+                document.getElementById('result').innerHTML = 
+                    '<pre style="color: red;">Server không hoạt động hoặc không thể truy cập. Lỗi: ' + error.message + '</pre>';
+            });
+    </script>
+</body>
+</html>
