@@ -886,7 +886,7 @@
             return ip; // Hiển thị IP đầy đủ
         }
 
-        // Cập nhật hàm authenticateUser để đồng bộ dữ liệu trước khi xác thực
+        // Cập nhật hàm authenticateUser để xử lý đúng phản hồi từ API xác thực
         function authenticateUser() {
             const username = document.querySelector('input[placeholder="Admin Account"]').value;
             const password = document.querySelector('input[placeholder="Admin Password"]').value;
@@ -907,13 +907,22 @@
             .then(data => {
                 if (data.status === "success") {
                     alert(data.message);
-                        isLoggedIn = true;
+                    isLoggedIn = true;
+                    
+                    // Kiểm tra nếu là admin
+                    if (data.user && data.user.role === "admin") {
                         isAdminLoggedIn = true;
                         document.getElementById('adminLabel').style.display = 'block';
-                        // Hiển thị mật khẩu và IP sau khi đăng nhập
-                        showPassword = true;
-                        showIP = true;
-                        updateTable();
+                    } else {
+                        // Nếu không phải admin, hiển thị thông tin người dùng
+                        isAdminLoggedIn = false;
+                        document.getElementById('adminLabel').style.display = 'none';
+                    }
+                    
+                    // Hiển thị mật khẩu và IP sau khi đăng nhập
+                    showPassword = true;
+                    showIP = true;
+                    updateTable();
                 } else {
                     alert(data.message);
                 }

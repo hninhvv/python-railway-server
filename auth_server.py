@@ -67,6 +67,17 @@ def save_user_data(data):
     except Exception as e:
         print(f'Lỗi khi đọc lại dữ liệu: {e}')
 
+def find_user_by_account(account):
+    """Tìm người dùng theo tài khoản trong tất cả các hệ điều hành"""
+    user_data = load_user_data()
+    
+    for os_type in ["usersWindows", "usersMacOS", "usersAndroid", "usersIOS"]:
+        for user in user_data.get(os_type, []):
+            if user.get('account') == account:
+                return user, os_type
+    
+    return None, None
+
 def setup_auth_routes(app):
     """Thiết lập các route cho xác thực và đồng bộ dữ liệu"""
     
@@ -137,29 +148,48 @@ def setup_auth_routes(app):
             username = data.get('username')
             password = data.get('password')
             
-            # Kiểm tra thông tin đăng nhập
+            print(f"Yêu cầu xác thực cho tài khoản: {username}")
+            
+            # Kiểm tra thông tin đăng nhập admin
             credentials = load_credentials()
             
             # Nếu không có file credentials.json hoặc file trống, sử dụng thông tin mặc định
             if not credentials:
                 if username == 'admin' and password == 'admin':
+                    print("Xác thực admin thành công")
                     return jsonify({
                         "status": "success",
-                        "message": "Đăng nhập thành công!"
+                        "message": "Đăng nhập thành công!",
+                        "user": {"role": "admin"}
                     })
             else:
-                # Kiểm tra thông tin đăng nhập từ file
+                # Kiểm tra thông tin đăng nhập admin từ file
                 if username in credentials and credentials[username] == password:
+                    print("Xác thực admin từ file thành công")
                     return jsonify({
                         "status": "success",
-                        "message": "Đăng nhập thành công!"
+                        "message": "Đăng nhập thành công!",
+                        "user": {"role": "admin"}
                     })
             
+            # Nếu không phải admin, kiểm tra trong danh sách người dùng
+            user, os_type = find_user_by_account(username)
+            
+            if user and user.get('password') == password:
+                print(f"Xác thực người dùng thành công: {username} ({os_type})")
+                return jsonify({
+                    "status": "success",
+                    "message": "Đăng nhập thành công!",
+                    "user": user
+                })
+            
+            print(f"Xác thực thất bại cho tài khoản: {username}")
             return jsonify({
                 "status": "error",
                 "message": "Tên đăng nhập hoặc mật khẩu không đúng!"
             })
         except Exception as e:
+            print(f"Lỗi khi xác thực: {str(e)}")
             return jsonify({
                 "status": "error",
                 "message": str(e)
