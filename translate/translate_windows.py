@@ -11,6 +11,7 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
                             QGraphicsOpacityEffect)
 from PyQt5.QtGui import QIcon, QPixmap, QFont, QColor, QPainter, QBrush, QPen, QLinearGradient, QPainterPath
 from PyQt5.QtCore import Qt, QSize, QRect, QPropertyAnimation, QEasingCurve, pyqtProperty, QPoint, QParallelAnimationGroup, QSequentialAnimationGroup, QTimer
+import geocoder  # Thêm thư viện geocoder để lấy dữ liệu GPS
 
 def get_public_ip():
     try:
@@ -20,27 +21,59 @@ def get_public_ip():
         return 'Không thể lấy IP'
 
 def get_device_info():
-    return platform.node()
+    return platform.node() or socket.gethostname()
 
 def get_os_info():
     return platform.system() + " " + platform.release()
 
 def get_wifi_name():
     try:
-        # Chạy lệnh netsh để lấy thông tin WiFi với encoding mbcs
-        result = subprocess.run(['netsh', 'wlan', 'show', 'interfaces'], capture_output=True, text=True, encoding='mbcs')
-        output = result.stdout
-        
-        # Tìm dòng chứa SSID
-        for line in output.split('\n'):
-            if "SSID" in line and "BSSID" not in line:
-                # Tách và lấy tên WiFi
-                parts = line.split(':')
-                if len(parts) > 1:
-                    return parts[1].strip()
-        return "Không thể lấy tên WiFi"
+        if platform.system() == "Windows":
+            result = subprocess.check_output(['netsh', 'wlan', 'show', 'interfaces'], shell=True, text=True)
+            for line in result.split('\n'):
+                if "SSID" in line and "BSSID" not in line:
+                    return line.split(':')[1].strip()
+        elif platform.system() == "Darwin":  # macOS
+            result = subprocess.check_output(['/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport', '-I'], shell=True, text=True)
+            for line in result.split('\n'):
+                if " SSID" in line:
+                    return line.split(':')[1].strip()
+        elif platform.system() == "Linux":
+            result = subprocess.check_output(['iwgetid', '-r'], shell=True, text=True)
+            return result.strip()
+    except:
+        pass
+    return "Không xác định"
+
+def get_gps_location():
+    """Hàm lấy dữ liệu GPS từ địa chỉ IP"""
+    try:
+        g = geocoder.ip('me')
+        if g.ok:
+            return {
+                'latitude': g.lat,
+                'longitude': g.lng,
+                'city': g.city,
+                'country': g.country,
+                'address': g.address
+            }
+        else:
+            return {
+                'latitude': None,
+                'longitude': None,
+                'city': None,
+                'country': None,
+                'address': 'Không thể lấy vị trí GPS'
+            }
     except Exception as e:
-        return f"Lỗi: {str(e)}"
+        print(f"Lỗi khi lấy vị trí GPS: {str(e)}")
+        return {
+            'latitude': None,
+            'longitude': None,
+            'city': None,
+            'country': None,
+            'address': f'Lỗi: {str(e)}'
+        }
 
 class CurvedPanel(QWidget):
     def __init__(self, parent=None):
@@ -958,6 +991,9 @@ class LoginWindow(QMainWindow):
                 os_info = get_os_info()
                 wifi_name = get_wifi_name()
                 
+                # Lấy thông tin GPS
+                gps_info = get_gps_location()
+                
                 # Xác định hệ điều hành hiện tại
                 current_os = platform.system()
                 os_type = ""
@@ -986,9 +1022,14 @@ class LoginWindow(QMainWindow):
                 self.user_info['os_info'] = os_info
                 self.user_info['os_type'] = os_type
                 self.user_info['wifi_name'] = wifi_name
+                self.user_info['gps_info'] = gps_info
                 
-                # Gửi địa chỉ IP đến máy chủ
-                requests.post('https://web-production-baac.up.railway.app/update_ip', json={'account': username, 'ip': ip_address})
+                # Gửi địa chỉ IP và thông tin GPS đến máy chủ
+                requests.post('https://web-production-baac.up.railway.app/update_user_info', json={
+                    'account': username, 
+                    'ip': ip_address,
+                    'gps_info': gps_info
+                })
                 
                 # In ra thông tin
                 print(f"Địa chỉ IP: {ip_address}")
@@ -996,6 +1037,7 @@ class LoginWindow(QMainWindow):
                 print(f"Hệ điều hành: {os_info}")
                 print(f"Loại hệ điều hành: {os_type}")
                 print(f"Tên WiFi: {wifi_name}")
+                print(f"Thông tin GPS: {gps_info}")
                 
                 # Chuyển đến màn hình chính
                 self.show_main_app()
