@@ -1076,7 +1076,7 @@ class LoginWindow(QMainWindow):
                 # Tạo thông báo đăng nhập thành công đẹp hơn với hiệu ứng
                 success_dialog = QDialog(None)  # Sử dụng None thay vì self để tạo dialog độc lập
                 success_dialog.setWindowTitle("Đăng nhập thành công")
-                success_dialog.setFixedSize(400, 350)
+                success_dialog.setFixedSize(400, 400)  # Tăng chiều cao để hiển thị đầy đủ thông tin
                 success_dialog.setWindowFlags(Qt.Dialog | Qt.WindowStaysOnTopHint | Qt.FramelessWindowHint)  # Đảm bảo dialog luôn hiển thị trên cùng và không có viền
                 success_dialog.setStyleSheet("""
                     QDialog {
@@ -1095,7 +1095,9 @@ class LoginWindow(QMainWindow):
                     QLabel#info_label {
                         background-color: rgba(255, 255, 255, 0.1);
                         border-radius: 10px;
-                        padding: 15px;
+                        padding: 10px;
+                        font-size: 13px;
+                        line-height: 1.2;
                     }
                     QPushButton {
                         background-color: rgba(255, 255, 255, 0.2);
@@ -1122,8 +1124,8 @@ class LoginWindow(QMainWindow):
 
                 # Layout chính
                 layout = QVBoxLayout(success_dialog)
-                layout.setContentsMargins(20, 20, 20, 20)
-                layout.setSpacing(15)
+                layout.setContentsMargins(20, 15, 20, 15)  # Giảm margin trên dưới
+                layout.setSpacing(10)  # Giảm khoảng cách giữa các widget
 
                 # Icon thành công
                 icon_label = QLabel()
@@ -1146,20 +1148,16 @@ class LoginWindow(QMainWindow):
                 status = user_data.get('status', 'Active')
                 limited = user_data.get('limited', 'Unlimited')
 
-                # Tạo chuỗi thông tin chi tiết
-                info_text = f"""
-                <p><b>Tên người dùng:</b> {name}</p>
-                <p><b>Tài khoản:</b> {account}</p>
-                <p><b>Email:</b> {email if email else 'Không có'}</p>
-                <p><b>Trạng thái:</b> {status}</p>
-                <p><b>Thời hạn:</b> {limited}</p>
-                """
+                # Tạo chuỗi thông tin chi tiết không có khoảng trắng thừa
+                info_text = f"<p><b>Tên người dùng:</b> {name}</p><p><b>Tài khoản:</b> {account}</p><p><b>Email:</b> {email if email else 'Không có'}</p><p><b>Trạng thái:</b> {status}</p><p><b>Thời hạn:</b> {limited}</p>"
 
                 # Thêm thông tin vào layout chính
                 info_label = QLabel(info_text)
                 info_label.setObjectName("info_label")
                 info_label.setAlignment(Qt.AlignLeft)
                 info_label.setWordWrap(True)
+                info_label.setTextFormat(Qt.RichText)
+                info_label.setMinimumHeight(120)  # Đảm bảo đủ không gian để hiển thị tất cả thông tin
                 layout.addWidget(info_label)
 
                 # Thêm thông báo
