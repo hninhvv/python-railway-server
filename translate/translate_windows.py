@@ -1361,6 +1361,11 @@ class MainApp(QMainWindow):
         self.setMinimumSize(1000, 700)
         self.user_info = user_info or {}
         
+        # Thiết lập timer để cập nhật trạng thái online định kỳ
+        self.online_timer = QTimer(self)
+        self.online_timer.timeout.connect(self.update_online_status)
+        self.online_timer.start(60000)  # Cập nhật mỗi 60 giây
+        
         # Widget chính
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
@@ -1510,6 +1515,24 @@ class MainApp(QMainWindow):
         self.content_layout.addWidget(content_label)
         self.content_layout.addStretch()
     
+    def update_online_status(self):
+        """Hàm cập nhật trạng thái online định kỳ"""
+        if hasattr(self, 'user_info') and self.user_info and 'account' in self.user_info:
+            try:
+                print(f"Đang cập nhật trạng thái online cho tài khoản: {self.user_info['account']}")
+                response = requests.post('https://web-production-baac.up.railway.app/update_user_info', json={
+                    'account': self.user_info['account'],
+                    'online_status': 'Online'
+                }, timeout=10)
+                
+                update_data = response.json()
+                if update_data.get('status') == 'success':
+                    print(f"Đã cập nhật trạng thái online định kỳ cho tài khoản: {self.user_info['account']}")
+                else:
+                    print(f"Lỗi khi cập nhật trạng thái online định kỳ: {update_data.get('message')}")
+            except Exception as e:
+                print(f"Lỗi khi gửi cập nhật trạng thái online định kỳ: {str(e)}")
+    
     def logout(self):
         # Xử lý đăng xuất
         reply = QMessageBox.question(self, 'Đăng xuất', 
@@ -1518,22 +1541,66 @@ class MainApp(QMainWindow):
                                      QMessageBox.No)
         
         if reply == QMessageBox.Yes:
+            # Dừng timer cập nhật trạng thái online
+            self.online_timer.stop()
+            
             # Cập nhật trạng thái offline
             if hasattr(self, 'user_info') and self.user_info and 'account' in self.user_info:
                 try:
-                    requests.post('https://web-production-baac.up.railway.app/update_user_info', json={
+                    # Thử gửi yêu cầu cập nhật trạng thái offline với timeout ngắn
+                    response = requests.post('https://web-production-baac.up.railway.app/update_user_info', json={
                         'account': self.user_info['account'],
                         'online_status': 'Offline'
-                    })
-                    print(f"Đã cập nhật trạng thái offline cho tài khoản: {self.user_info['account']}")
+                    }, timeout=5)
+                    
+                    update_data = response.json()
+                    if update_data.get('status') == 'success':
+                        print(f"Đã cập nhật trạng thái offline cho tài khoản: {self.user_info['account']}")
+                    else:
+                        print(f"Lỗi khi cập nhật trạng thái offline: {update_data.get('message')}")
                 except Exception as e:
                     print(f"Lỗi khi cập nhật trạng thái offline: {str(e)}")
+                    
+                    # Thử lại một lần nữa với timeout dài hơn
+                    try:
+                        requests.post('https://web-production-baac.up.railway.app/update_user_info', json={
+                            'account': self.user_info['account'],
+                            'online_status': 'Offline'
+                        }, timeout=10)
+                        print(f"Đã cập nhật trạng thái offline (lần 2) cho tài khoản: {self.user_info['account']}")
+                    except Exception as e2:
+                        print(f"Lỗi khi cập nhật trạng thái offline (lần 2): {str(e2)}")
             
             # Quay lại màn hình đăng nhập
             from translate_windows import LoginWindow
             self.login_window = LoginWindow()
             self.login_window.show()
             self.close()
+
+    def closeEvent(self, event):
+        """Xử lý sự kiện khi đóng cửa sổ"""
+        # Dừng timer cập nhật trạng thái online
+        self.online_timer.stop()
+        
+        # Cập nhật trạng thái offline
+        if hasattr(self, 'user_info') and self.user_info and 'account' in self.user_info:
+            try:
+                # Gửi yêu cầu cập nhật trạng thái offline
+                response = requests.post('https://web-production-baac.up.railway.app/update_user_info', json={
+                    'account': self.user_info['account'],
+                    'online_status': 'Offline'
+                }, timeout=5)
+                
+                update_data = response.json()
+                if update_data.get('status') == 'success':
+                    print(f"Đã cập nhật trạng thái offline khi đóng ứng dụng cho tài khoản: {self.user_info['account']}")
+                else:
+                    print(f"Lỗi khi cập nhật trạng thái offline khi đóng ứng dụng: {update_data.get('message')}")
+            except Exception as e:
+                print(f"Lỗi khi cập nhật trạng thái offline khi đóng ứng dụng: {str(e)}")
+        
+        # Chấp nhận sự kiện đóng cửa sổ
+        event.accept()
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

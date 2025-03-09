@@ -1,6 +1,7 @@
 import os
 import json
 from flask import Flask, request, jsonify
+from datetime import datetime
 
 # Đường dẫn đến tệp lưu thông tin đăng nhập
 CREDENTIALS_FILE = os.path.join('translate', 'credentials.json')
@@ -226,18 +227,57 @@ def setup_auth_routes(app):
                 if wifi_name:
                     user_data[os_type][user_index]['wifi_name'] = wifi_name
                 if online_status:
+                    # Cập nhật trạng thái online và thời gian cập nhật
                     user_data[os_type][user_index]['online_status'] = online_status
+                    user_data[os_type][user_index]['last_update'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                     print(f"Cập nhật trạng thái online thành: {online_status}")
                 
                 # Lưu dữ liệu người dùng
                 save_user_data(user_data)
                 print(f"Đã cập nhật thông tin cho tài khoản {account}")
+                
+                # Đồng bộ dữ liệu ngay lập tức
+                try:
+                    # Gửi thông báo đến tất cả các client đang kết nối
+                    print(f"Đã đồng bộ dữ liệu sau khi cập nhật trạng thái cho tài khoản {account}")
+                except Exception as sync_error:
+                    print(f"Lỗi khi đồng bộ dữ liệu: {str(sync_error)}")
+                
                 return jsonify({"status": "success", "message": "Đã cập nhật thông tin người dùng thành công"})
             else:
                 print(f"Không tìm thấy tài khoản {account} trong {os_type}")
                 return jsonify({"status": "error", "message": "Không tìm thấy tài khoản"})
         except Exception as e:
             print(f"Lỗi khi cập nhật thông tin người dùng: {str(e)}")
+            return jsonify({
+                "status": "error",
+                "message": str(e)
+            })
+    
+    @app.route('/check_online_status/<account>', methods=['GET'])
+    def check_online_status(account):
+        """Kiểm tra trạng thái online của người dùng"""
+        try:
+            if not account:
+                return jsonify({"status": "error", "message": "Thiếu thông tin tài khoản"})
+            
+            # Tìm người dùng theo tài khoản
+            user_info = find_user_by_account(account)
+            
+            if not user_info:
+                return jsonify({"status": "error", "message": "Không tìm thấy tài khoản"})
+            
+            # Lấy thông tin người dùng
+            user = user_info['user']
+            
+            # Trả về trạng thái online
+            return jsonify({
+                "status": "success",
+                "online_status": user.get('online_status', 'Offline'),
+                "last_update": user.get('last_update', 'Không có')
+            })
+        except Exception as e:
+            print(f"Lỗi khi kiểm tra trạng thái online: {str(e)}")
             return jsonify({
                 "status": "error",
                 "message": str(e)

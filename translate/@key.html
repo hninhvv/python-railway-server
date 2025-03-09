@@ -265,6 +265,9 @@
 
         // Biến để theo dõi phiên bản dữ liệu
         let dataVersion = 0;
+        
+        // Biến để lưu trữ timer cập nhật trạng thái online
+        let onlineStatusTimer = null;
 
         // Hàm đồng bộ dữ liệu người dùng với API server theo hệ điều hành cụ thể
         function syncDataWithServer(osType = null) {
@@ -506,6 +509,9 @@
             
             // Tải dữ liệu người dùng từ server (không tự động đồng bộ)
             fetchUserData();
+            
+            // Bắt đầu cập nhật trạng thái online định kỳ
+            startOnlineStatusUpdates();
         };
 
         // Hàm tìm kiếm người dùng
@@ -1122,6 +1128,7 @@
                             <button onclick="resetAllUsers(); return false;">Reset All Users</button>
                             <button onclick="deleteUser(); return false;">Delete User</button>
                             <button onclick="syncDataWithServer('${content}'); return false;" style="background-color: #4CAF50;">Đồng Bộ ${content}</button>
+                            <button onclick="updateAllOnlineStatus(); return false;" style="background-color: #2196F3;">Cập Nhật Trạng Thái</button>
                         </div>
                         <div style="display: flex; align-items: center;">
                             <input type="text" id="searchInput" placeholder="Search users..." style="padding: 8px; border-radius: 5px; border: 1px solid #ccc; margin-right: 5px;">
@@ -1627,6 +1634,105 @@
                 });
             });
         });
+
+        // Hàm kiểm tra trạng thái online của người dùng
+        function checkOnlineStatus(account) {
+            fetch(`/check_online_status/${account}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        console.log(`Trạng thái online của ${account}: ${data.online_status}, Cập nhật lần cuối: ${data.last_update}`);
+                        
+                        // Tìm người dùng trong mảng dữ liệu
+                        let userArray;
+                        switch (currentOS) {
+                            case 'Windows':
+                                userArray = usersWindows;
+                                break;
+                            case 'MacOS':
+                                userArray = usersMacOS;
+                                break;
+                            case 'Android':
+                                userArray = usersAndroid;
+                                break;
+                            case 'IOS':
+                                userArray = usersIOS;
+                                break;
+                            default:
+                                userArray = [];
+                        }
+                        
+                        // Cập nhật trạng thái online
+                        const userIndex = userArray.findIndex(user => user.account === account);
+                        if (userIndex !== -1) {
+                            const oldStatus = userArray[userIndex].online_status;
+                            userArray[userIndex].online_status = data.online_status;
+                            userArray[userIndex].last_update = data.last_update;
+                            
+                            // Nếu trạng thái thay đổi, cập nhật giao diện
+                            if (oldStatus !== data.online_status) {
+                                updateTable();
+                                console.log(`Đã cập nhật trạng thái online của ${account} từ ${oldStatus} thành ${data.online_status}`);
+                            }
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error(`Lỗi khi kiểm tra trạng thái online của ${account}: ${error}`);
+                });
+        }
+        
+        // Hàm cập nhật trạng thái online của tất cả người dùng
+        function updateAllOnlineStatus() {
+            let userArray;
+            switch (currentOS) {
+                case 'Windows':
+                    userArray = usersWindows;
+                    break;
+                case 'MacOS':
+                    userArray = usersMacOS;
+                    break;
+                case 'Android':
+                    userArray = usersAndroid;
+                    break;
+                case 'IOS':
+                    userArray = usersIOS;
+                    break;
+                default:
+                    userArray = [];
+            }
+            
+            // Kiểm tra trạng thái online của tất cả người dùng
+            userArray.forEach(user => {
+                if (user.account) {
+                    checkOnlineStatus(user.account);
+                }
+            });
+        }
+        
+        // Hàm bắt đầu cập nhật trạng thái online định kỳ
+        function startOnlineStatusUpdates() {
+            // Dừng timer cũ nếu có
+            if (onlineStatusTimer) {
+                clearInterval(onlineStatusTimer);
+            }
+            
+            // Cập nhật ngay lập tức
+            updateAllOnlineStatus();
+            
+            // Thiết lập timer mới (cập nhật mỗi 30 giây)
+            onlineStatusTimer = setInterval(updateAllOnlineStatus, 30000);
+            console.log("Đã bắt đầu cập nhật trạng thái online định kỳ");
+        }
+        
+        // Hàm dừng cập nhật trạng thái online
+        function stopOnlineStatusUpdates() {
+            if (onlineStatusTimer) {
+                clearInterval(onlineStatusTimer);
+                onlineStatusTimer = null;
+                console.log("Đã dừng cập nhật trạng thái online định kỳ");
+            }
+        }
     </script>
 </head>
 <body>
