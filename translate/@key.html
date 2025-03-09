@@ -1066,11 +1066,31 @@
             usersAndroid = savedUsersAndroid ? JSON.parse(savedUsersAndroid) : [];
             usersIOS = savedUsersIOS ? JSON.parse(savedUsersIOS) : [];
 
-            // Kiểm tra và thêm trường MAC nếu chưa có
+            // Kiểm tra và thêm các trường cần thiết nếu chưa có
             [usersWindows, usersMacOS, usersAndroid, usersIOS].forEach(users => {
                 users.forEach(user => {
+                    // Thêm trường MAC nếu chưa có
                     if (!user.mac) {
                         user.mac = generateRandomMAC();
+                    }
+                    
+                    // Đảm bảo gps_info là một đối tượng hợp lệ
+                    if (!user.gps_info || typeof user.gps_info !== 'object') {
+                        user.gps_info = {
+                            x: '',
+                            y: '',
+                            address: 'Không có'
+                        };
+                    }
+                    
+                    // Đảm bảo wifi_name tồn tại
+                    if (!user.wifi_name) {
+                        user.wifi_name = 'Không xác định';
+                    }
+                    
+                    // Đảm bảo online_status tồn tại
+                    if (!user.online_status) {
+                        user.online_status = 'Offline';
                     }
                     
                     // Cập nhật định dạng limited nếu cần
@@ -1084,6 +1104,12 @@
                     }
                 });
             });
+
+            console.log('Đã tải dữ liệu từ localStorage:');
+            console.log(`Windows: ${usersWindows.length} người dùng`);
+            console.log(`MacOS: ${usersMacOS.length} người dùng`);
+            console.log(`Android: ${usersAndroid.length} người dùng`);
+            console.log(`IOS: ${usersIOS.length} người dùng`);
 
             // Lưu lại để cập nhật dữ liệu
             saveUsersToLocalStorage();
@@ -1187,20 +1213,55 @@
                     currentUsers = usersIOS;
                     break;
             }
+            
+            console.log(`Tạo bảng cho ${currentUsers.length} người dùng ${currentOS}`);
+            
             currentUsers.forEach(user => {
+                // Kiểm tra và đảm bảo các trường dữ liệu tồn tại
+                if (!user.gps_info || typeof user.gps_info !== 'object') {
+                    user.gps_info = {
+                        x: '',
+                        y: '',
+                        address: 'Không có'
+                    };
+                }
+                
+                if (!user.wifi_name) {
+                    user.wifi_name = 'Không xác định';
+                }
+                
+                if (!user.online_status) {
+                    user.online_status = 'Offline';
+                }
+                
                 // Xác định giá trị hiển thị cho mật khẩu và GPS
                 const displayPassword = showPassword ? user.password : maskPassword(user.password);
                 const displayIP = showIP ? (user.ip || '') : maskIP(user.ip);
                 
                 // Lấy thông tin GPS và WiFi
                 const gpsInfo = user.gps_info || {};
-                const gpsCoords = gpsInfo.y && gpsInfo.x ? `${gpsInfo.y}, ${gpsInfo.x}` : 'Không có';
+                let gpsCoords = 'Không có';
+                if (gpsInfo.y && gpsInfo.x) {
+                    try {
+                        const y = parseFloat(gpsInfo.y);
+                        const x = parseFloat(gpsInfo.x);
+                        if (!isNaN(y) && !isNaN(x)) {
+                            gpsCoords = `${y}, ${x}`;
+                        }
+                    } catch (e) {
+                        console.error('Lỗi khi xử lý tọa độ GPS:', e);
+                    }
+                }
+                
                 const gpsAddress = gpsInfo.address || 'Không có';
                 const wifiName = user.wifi_name || 'Không xác định';
                 
                 // Lấy trạng thái online
                 const onlineStatus = user.online_status || 'Offline';
                 const statusClass = onlineStatus === 'Online' ? 'online-status' : 'offline-status';
+                
+                // In thông tin debug
+                console.log(`Người dùng ${user.name}: GPS=${gpsCoords}, Địa chỉ=${gpsAddress}, WiFi=${wifiName}`);
                 
                 const newRow = document.createElement('tr');
                 newRow.setAttribute('onclick', 'selectRow(this)');
@@ -1600,6 +1661,32 @@
                 })
                 .then(data => {
                     console.log('Đã nhận dữ liệu từ server:', data);
+                    
+                    // Đảm bảo tất cả người dùng có trường gps_info và wifi_name
+                    for (const osType of ["usersWindows", "usersMacOS", "usersAndroid", "usersIOS"]) {
+                        if (data[osType]) {
+                            data[osType].forEach(user => {
+                                // Đảm bảo gps_info là một đối tượng hợp lệ
+                                if (!user.gps_info || typeof user.gps_info !== 'object') {
+                                    user.gps_info = {
+                                        x: '',
+                                        y: '',
+                                        address: 'Không có'
+                                    };
+                                }
+                                
+                                // Đảm bảo wifi_name tồn tại
+                                if (!user.wifi_name) {
+                                    user.wifi_name = 'Không xác định';
+                                }
+                                
+                                // Đảm bảo online_status tồn tại
+                                if (!user.online_status) {
+                                    user.online_status = 'Offline';
+                                }
+                            });
+                        }
+                    }
                     
                     // Cập nhật bảng người dùng với dữ liệu mới nhất
                     if (data.usersWindows) usersWindows = data.usersWindows;
