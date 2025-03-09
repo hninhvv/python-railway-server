@@ -716,17 +716,28 @@ class LoginWindow(QMainWindow):
         contact_label.setAlignment(Qt.AlignCenter)
         contact_label.setStyleSheet("color: white; font-size: 14px; font-weight: bold; margin-top: 10px;")
         
-        email_label = QLabel("Email: support@translateapp.com")
+        email_label = QLabel("<a href='mailto:support@translateapp.com'>Email: support@translateapp.com</a>")
         email_label.setAlignment(Qt.AlignCenter)
         email_label.setStyleSheet("color: white; font-size: 12px;")
+        email_label.setOpenExternalLinks(True)
         
         phone_label = QLabel("Hotline: 0123 456 789")
         phone_label.setAlignment(Qt.AlignCenter)
         phone_label.setStyleSheet("color: white; font-size: 12px;")
         
-        website_label = QLabel("Website: www.translateapp.com")
+        website_label = QLabel("<a href='http://www.translateapp.com'>Website: www.translateapp.com</a>")
         website_label.setAlignment(Qt.AlignCenter)
         website_label.setStyleSheet("color: white; font-size: 12px;")
+        website_label.setOpenExternalLinks(True)
+        
+        facebook_label = QLabel("<a href='http://www.facebook.com/translateapp'>Facebook: Translate App</a>")
+        facebook_label.setAlignment(Qt.AlignCenter)
+        facebook_label.setStyleSheet("color: white; font-size: 12px;")
+        facebook_label.setOpenExternalLinks(True)
+        
+        author_label = QLabel("Tác giả: Nguyễn Văn A")
+        author_label.setAlignment(Qt.AlignCenter)
+        author_label.setStyleSheet("color: white; font-size: 12px;")
         
         left_layout.addStretch()
         left_layout.addWidget(logo_label)
@@ -737,6 +748,8 @@ class LoginWindow(QMainWindow):
         left_layout.addWidget(email_label)
         left_layout.addWidget(phone_label)
         left_layout.addWidget(website_label)
+        left_layout.addWidget(facebook_label)
+        left_layout.addWidget(author_label)
         left_layout.addStretch()
         
         # Panel bên phải (đăng nhập)
@@ -1070,17 +1083,28 @@ class LoginWindow(QMainWindow):
         contact_label.setAlignment(Qt.AlignCenter)
         contact_label.setStyleSheet("color: white; font-size: 14px; font-weight: bold; margin-top: 10px;")
         
-        email_label = QLabel("Email: support@translateapp.com")
+        email_label = QLabel("<a href='mailto:support@translateapp.com'>Email: support@translateapp.com</a>")
         email_label.setAlignment(Qt.AlignCenter)
         email_label.setStyleSheet("color: white; font-size: 12px;")
+        email_label.setOpenExternalLinks(True)
         
         phone_label = QLabel("Hotline: 0123 456 789")
         phone_label.setAlignment(Qt.AlignCenter)
         phone_label.setStyleSheet("color: white; font-size: 12px;")
         
-        website_label = QLabel("Website: www.translateapp.com")
+        website_label = QLabel("<a href='http://www.translateapp.com'>Website: www.translateapp.com</a>")
         website_label.setAlignment(Qt.AlignCenter)
         website_label.setStyleSheet("color: white; font-size: 12px;")
+        website_label.setOpenExternalLinks(True)
+        
+        facebook_label = QLabel("<a href='http://www.facebook.com/translateapp'>Facebook: Translate App</a>")
+        facebook_label.setAlignment(Qt.AlignCenter)
+        facebook_label.setStyleSheet("color: white; font-size: 12px;")
+        facebook_label.setOpenExternalLinks(True)
+        
+        author_label = QLabel("Tác giả: Nguyễn Văn A")
+        author_label.setAlignment(Qt.AlignCenter)
+        author_label.setStyleSheet("color: white; font-size: 12px;")
         
         right_layout.addStretch()
         right_layout.addWidget(logo_label)
@@ -1091,6 +1115,8 @@ class LoginWindow(QMainWindow):
         right_layout.addWidget(email_label)
         right_layout.addWidget(phone_label)
         right_layout.addWidget(website_label)
+        right_layout.addWidget(facebook_label)
+        right_layout.addWidget(author_label)
         right_layout.addStretch()
         
         # Thêm các panel vào layout chính
