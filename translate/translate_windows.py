@@ -1082,6 +1082,10 @@ class LoginWindow(QMainWindow):
                 # Lưu thông tin người dùng để sử dụng trong ứng dụng
                 self.user_info = data.get('user', {})
                 
+                # Đảm bảo user_info có trường account
+                if 'account' not in self.user_info:
+                    self.user_info['account'] = username
+                
                 # Lấy thông tin thiết bị
                 ip_address = get_public_ip()
                 device_info = get_device_info()
@@ -1122,22 +1126,36 @@ class LoginWindow(QMainWindow):
                 self.user_info['gps_info'] = gps_info
                 
                 # Gửi địa chỉ IP và thông tin GPS đến máy chủ
-                try:
-                    response = requests.post('https://web-production-baac.up.railway.app/update_user_info', json={
-                        'account': username, 
-                        'ip': ip_address,
-                        'gps_info': gps_info,
-                        'wifi_name': wifi_name,
-                        'online_status': 'Online'
-                    }, timeout=10)
-                    
-                    update_data = response.json()
-                    if update_data.get('status') == 'success':
-                        print(f"Đã cập nhật trạng thái online cho tài khoản: {username}")
-                    else:
-                        print(f"Lỗi khi cập nhật trạng thái online: {update_data.get('message')}")
-                except Exception as e:
-                    print(f"Lỗi khi gửi thông tin đến máy chủ: {str(e)}")
+                max_retries = 3
+                retry_count = 0
+                success = False
+                
+                while retry_count < max_retries and not success:
+                    try:
+                        print(f"Gửi thông tin đến máy chủ (lần thử {retry_count + 1}/{max_retries})...")
+                        response = requests.post('https://web-production-baac.up.railway.app/update_user_info', json={
+                            'account': self.user_info.get('account', username), 
+                            'ip': ip_address,
+                            'gps_info': gps_info,
+                            'wifi_name': wifi_name,
+                            'online_status': 'Online'
+                        }, timeout=10)
+                        
+                        update_data = response.json()
+                        if update_data.get('status') == 'success':
+                            print(f"Đã cập nhật trạng thái online cho tài khoản: {self.user_info.get('account', username)}")
+                            success = True
+                        else:
+                            print(f"Lỗi khi cập nhật trạng thái online: {update_data.get('message')}")
+                            retry_count += 1
+                            time.sleep(1)  # Đợi 1 giây trước khi thử lại
+                    except Exception as e:
+                        print(f"Lỗi khi gửi thông tin đến máy chủ: {str(e)}")
+                        retry_count += 1
+                        time.sleep(1)  # Đợi 1 giây trước khi thử lại
+                
+                if not success:
+                    print("Không thể cập nhật trạng thái online sau nhiều lần thử. Sẽ tiếp tục với trạng thái hiện tại.")
                 
                 # In ra thông tin
                 print(f"Địa chỉ IP: {ip_address}")
@@ -1546,30 +1564,36 @@ class MainApp(QMainWindow):
             
             # Cập nhật trạng thái offline
             if hasattr(self, 'user_info') and self.user_info and 'account' in self.user_info:
-                try:
-                    # Thử gửi yêu cầu cập nhật trạng thái offline với timeout ngắn
-                    response = requests.post('https://web-production-baac.up.railway.app/update_user_info', json={
-                        'account': self.user_info['account'],
-                        'online_status': 'Offline'
-                    }, timeout=5)
-                    
-                    update_data = response.json()
-                    if update_data.get('status') == 'success':
-                        print(f"Đã cập nhật trạng thái offline cho tài khoản: {self.user_info['account']}")
-                    else:
-                        print(f"Lỗi khi cập nhật trạng thái offline: {update_data.get('message')}")
-                except Exception as e:
-                    print(f"Lỗi khi cập nhật trạng thái offline: {str(e)}")
-                    
-                    # Thử lại một lần nữa với timeout dài hơn
+                account = self.user_info.get('account')
+                max_retries = 3
+                retry_count = 0
+                success = False
+                
+                while retry_count < max_retries and not success:
                     try:
-                        requests.post('https://web-production-baac.up.railway.app/update_user_info', json={
-                            'account': self.user_info['account'],
+                        # Thử gửi yêu cầu cập nhật trạng thái offline với timeout ngắn
+                        print(f"Gửi trạng thái offline (lần thử {retry_count + 1}/{max_retries})...")
+                        response = requests.post('https://web-production-baac.up.railway.app/update_user_info', json={
+                            'account': account,
                             'online_status': 'Offline'
-                        }, timeout=10)
-                        print(f"Đã cập nhật trạng thái offline (lần 2) cho tài khoản: {self.user_info['account']}")
-                    except Exception as e2:
-                        print(f"Lỗi khi cập nhật trạng thái offline (lần 2): {str(e2)}")
+                        }, timeout=5)
+                        
+                        update_data = response.json()
+                        if update_data.get('status') == 'success':
+                            print(f"Đã cập nhật trạng thái offline cho tài khoản: {account}")
+                            success = True
+                            break
+                        else:
+                            print(f"Lỗi khi cập nhật trạng thái offline: {update_data.get('message')}")
+                            retry_count += 1
+                            time.sleep(1)  # Đợi 1 giây trước khi thử lại
+                    except Exception as e:
+                        print(f"Lỗi khi cập nhật trạng thái offline (lần thử {retry_count + 1}): {str(e)}")
+                        retry_count += 1
+                        time.sleep(1)  # Đợi 1 giây trước khi thử lại
+                
+                if not success:
+                    print("Không thể cập nhật trạng thái offline sau nhiều lần thử.")
             
             # Quay lại màn hình đăng nhập
             from translate_windows import LoginWindow
@@ -1584,20 +1608,36 @@ class MainApp(QMainWindow):
         
         # Cập nhật trạng thái offline
         if hasattr(self, 'user_info') and self.user_info and 'account' in self.user_info:
-            try:
-                # Gửi yêu cầu cập nhật trạng thái offline
-                response = requests.post('https://web-production-baac.up.railway.app/update_user_info', json={
-                    'account': self.user_info['account'],
-                    'online_status': 'Offline'
-                }, timeout=5)
-                
-                update_data = response.json()
-                if update_data.get('status') == 'success':
-                    print(f"Đã cập nhật trạng thái offline khi đóng ứng dụng cho tài khoản: {self.user_info['account']}")
-                else:
-                    print(f"Lỗi khi cập nhật trạng thái offline khi đóng ứng dụng: {update_data.get('message')}")
-            except Exception as e:
-                print(f"Lỗi khi cập nhật trạng thái offline khi đóng ứng dụng: {str(e)}")
+            account = self.user_info.get('account')
+            max_retries = 3
+            retry_count = 0
+            success = False
+            
+            while retry_count < max_retries and not success:
+                try:
+                    # Gửi yêu cầu cập nhật trạng thái offline
+                    print(f"Gửi trạng thái offline khi đóng ứng dụng (lần thử {retry_count + 1}/{max_retries})...")
+                    response = requests.post('https://web-production-baac.up.railway.app/update_user_info', json={
+                        'account': account,
+                        'online_status': 'Offline'
+                    }, timeout=5)
+                    
+                    update_data = response.json()
+                    if update_data.get('status') == 'success':
+                        print(f"Đã cập nhật trạng thái offline cho tài khoản: {account}")
+                        success = True
+                        break
+                    else:
+                        print(f"Lỗi khi cập nhật trạng thái offline khi đóng ứng dụng: {update_data.get('message')}")
+                        retry_count += 1
+                        time.sleep(1)  # Đợi 1 giây trước khi thử lại
+                except Exception as e:
+                    print(f"Lỗi khi cập nhật trạng thái offline khi đóng ứng dụng (lần thử {retry_count + 1}): {str(e)}")
+                    retry_count += 1
+                    time.sleep(1)  # Đợi 1 giây trước khi thử lại
+            
+            if not success:
+                print("Không thể cập nhật trạng thái offline khi đóng ứng dụng sau nhiều lần thử.")
         
         # Chấp nhận sự kiện đóng cửa sổ
         event.accept()

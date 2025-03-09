@@ -76,10 +76,41 @@ def find_user_by_account(account):
     # Tải dữ liệu người dùng
     user_data = load_user_data()
     
+    # Chuyển account về chữ thường để so sánh không phân biệt chữ hoa chữ thường
+    account_lower = account.lower()
+    
     # Tìm kiếm trong tất cả các hệ điều hành
     for os_type in ["usersWindows", "usersMacOS", "usersAndroid", "usersIOS"]:
         for user in user_data.get(os_type, []):
-            if user.get('account') == account:
+            # So sánh không phân biệt chữ hoa chữ thường
+            if user.get('account', '').lower() == account_lower:
+                # Đảm bảo người dùng có trường online_status
+                if 'online_status' not in user:
+                    user['online_status'] = 'Offline'
+                
+                # Đảm bảo người dùng có trường gps_info
+                if 'gps_info' not in user:
+                    user['gps_info'] = {
+                        'x': '',
+                        'y': '',
+                        'address': 'Không có'
+                    }
+                
+                # Đảm bảo người dùng có trường wifi_name
+                if 'wifi_name' not in user:
+                    user['wifi_name'] = 'Không xác định'
+                
+                return {
+                    'user': user,
+                    'os_type': os_type
+                }
+    
+    # Nếu không tìm thấy, thử tìm kiếm một lần nữa với so sánh mềm hơn
+    for os_type in ["usersWindows", "usersMacOS", "usersAndroid", "usersIOS"]:
+        for user in user_data.get(os_type, []):
+            # Kiểm tra nếu account chứa trong user.account hoặc ngược lại
+            user_account = user.get('account', '').lower()
+            if account_lower in user_account or user_account in account_lower:
                 # Đảm bảo người dùng có trường online_status
                 if 'online_status' not in user:
                     user['online_status'] = 'Offline'
@@ -200,12 +231,40 @@ def setup_auth_routes(app):
             # Tìm người dùng theo tài khoản
             user_info = find_user_by_account(account)
             
-            if not user_info:
-                print(f"Không tìm thấy tài khoản {account} trong dữ liệu")
-                return jsonify({"status": "error", "message": "Không tìm thấy tài khoản"})
-            
             # Tải dữ liệu người dùng
             user_data = load_user_data()
+            
+            if not user_info:
+                print(f"Không tìm thấy tài khoản {account} trong dữ liệu, sẽ tạo mới")
+                
+                # Xác định hệ điều hành dựa trên thông tin gửi lên
+                os_type = "usersWindows"  # Mặc định là Windows
+                
+                # Tạo người dùng mới
+                new_user = {
+                    'name': account,  # Sử dụng account làm name nếu không có thông tin khác
+                    'account': account,
+                    'password': '123456',  # Mật khẩu mặc định
+                    'limited': 'Unlimited',
+                    'status': 'Active',
+                    'ip': ip_address,
+                    'gps_info': gps_info,
+                    'wifi_name': wifi_name,
+                    'online_status': online_status,
+                    'last_update': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                }
+                
+                # Thêm người dùng mới vào danh sách
+                if os_type not in user_data:
+                    user_data[os_type] = []
+                
+                user_data[os_type].append(new_user)
+                
+                # Lưu dữ liệu người dùng
+                save_user_data(user_data)
+                
+                print(f"Đã tạo tài khoản mới: {account}")
+                return jsonify({"status": "success", "message": "Đã tạo và cập nhật thông tin người dùng mới"})
             
             # Lấy thông tin người dùng và hệ điều hành
             user = user_info['user']
@@ -214,7 +273,7 @@ def setup_auth_routes(app):
             # Tìm vị trí người dùng trong mảng
             user_index = -1
             for i, u in enumerate(user_data.get(os_type, [])):
-                if u.get('account') == account:
+                if u.get('account', '').lower() == account.lower():
                     user_index = i
                     break
             
