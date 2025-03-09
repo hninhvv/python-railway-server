@@ -55,8 +55,45 @@ def serve_css(filename):
 def serve_js(filename):
     return send_from_directory('translate', f'{filename}.js')
 
+# API endpoint để cập nhật địa chỉ IP
+@app.route('/update_ip', methods=['POST'])
+def update_ip():
+    try:
+        data = request.json
+        account = data.get('account')
+        ip_address = data.get('ip')
+        
+        if not account or not ip_address:
+            return jsonify({"status": "error", "message": "Thiếu thông tin tài khoản hoặc IP"})
+        
+        # Tải dữ liệu người dùng
+        user_data_file = os.path.join('translate', 'user_data.json')
+        if os.path.exists(user_data_file):
+            with open(user_data_file, 'r', encoding='utf-8') as f:
+                user_data = json.load(f)
+        else:
+            user_data = {"usersWindows": [], "usersMacOS": [], "usersAndroid": [], "usersIOS": []}
+        
+        # Cập nhật IP cho tài khoản
+        updated = False
+        for os_type in ["usersWindows", "usersMacOS", "usersAndroid", "usersIOS"]:
+            for user in user_data.get(os_type, []):
+                if user.get('account') == account:
+                    user['ip'] = ip_address
+                    updated = True
+        
+        if updated:
+            # Lưu dữ liệu người dùng
+            with open(user_data_file, 'w', encoding='utf-8') as f:
+                json.dump(user_data, f, indent=2, ensure_ascii=False)
+            return jsonify({"status": "success", "message": "Đã cập nhật IP thành công"})
+        else:
+            return jsonify({"status": "error", "message": "Không tìm thấy tài khoản"})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)})
+
 # Thiết lập các route cho xác thực và đồng bộ dữ liệu
 setup_auth_routes(app)
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000))) 
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5001))) 
