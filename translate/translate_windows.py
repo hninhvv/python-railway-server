@@ -1365,13 +1365,22 @@ class LoginWindow(QMainWindow):
                 self.user_info['gps_info'] = gps_info
                 
                 # Gửi địa chỉ IP và thông tin GPS đến máy chủ
-                requests.post('https://web-production-baac.up.railway.app/update_user_info', json={
-                    'account': username, 
-                    'ip': ip_address,
-                    'gps_info': gps_info,
-                    'wifi_name': wifi_name,
-                    'online_status': 'Online'
-                })
+                try:
+                    response = requests.post('https://web-production-baac.up.railway.app/update_user_info', json={
+                        'account': username, 
+                        'ip': ip_address,
+                        'gps_info': gps_info,
+                        'wifi_name': wifi_name,
+                        'online_status': 'Online'
+                    }, timeout=10)
+                    
+                    update_data = response.json()
+                    if update_data.get('status') == 'success':
+                        print(f"Đã cập nhật trạng thái online cho tài khoản: {username}")
+                    else:
+                        print(f"Lỗi khi cập nhật trạng thái online: {update_data.get('message')}")
+                except Exception as e:
+                    print(f"Lỗi khi gửi thông tin đến máy chủ: {str(e)}")
                 
                 # In ra thông tin
                 print(f"Địa chỉ IP: {ip_address}")

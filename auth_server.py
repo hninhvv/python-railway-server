@@ -68,26 +68,39 @@ def save_user_data(data):
         print(f'Lỗi khi đọc lại dữ liệu: {e}')
 
 def find_user_by_account(account):
-    """Tìm người dùng theo tài khoản trong tất cả các hệ điều hành"""
+    """Hàm tìm kiếm người dùng theo tài khoản"""
+    if not account:
+        return None
+    
+    # Tải dữ liệu người dùng
     user_data = load_user_data()
     
+    # Tìm kiếm trong tất cả các hệ điều hành
     for os_type in ["usersWindows", "usersMacOS", "usersAndroid", "usersIOS"]:
         for user in user_data.get(os_type, []):
             if user.get('account') == account:
-                # Đảm bảo user có các trường gps_info và wifi_name
+                # Đảm bảo người dùng có trường online_status
+                if 'online_status' not in user:
+                    user['online_status'] = 'Offline'
+                
+                # Đảm bảo người dùng có trường gps_info
                 if 'gps_info' not in user:
                     user['gps_info'] = {
                         'x': '',
                         'y': '',
                         'address': 'Không có'
                     }
+                
+                # Đảm bảo người dùng có trường wifi_name
                 if 'wifi_name' not in user:
                     user['wifi_name'] = 'Không xác định'
-                if 'online_status' not in user:
-                    user['online_status'] = 'Offline'
-                return user, os_type
+                
+                return {
+                    'user': user,
+                    'os_type': os_type
+                }
     
-    return None, None
+    return None
 
 def setup_auth_routes(app):
     """Thiết lập các route cho xác thực và đồng bộ dữ liệu"""
@@ -177,34 +190,54 @@ def setup_auth_routes(app):
             wifi_name = data.get('wifi_name')
             online_status = data.get('online_status')
             
+            print(f"Nhận yêu cầu cập nhật thông tin cho tài khoản: {account}")
+            print(f"Dữ liệu nhận được: {data}")
+            
             if not account:
                 return jsonify({"status": "error", "message": "Thiếu thông tin tài khoản"})
+            
+            # Tìm người dùng theo tài khoản
+            user_info = find_user_by_account(account)
+            
+            if not user_info:
+                print(f"Không tìm thấy tài khoản {account} trong dữ liệu")
+                return jsonify({"status": "error", "message": "Không tìm thấy tài khoản"})
             
             # Tải dữ liệu người dùng
             user_data = load_user_data()
             
-            # Cập nhật thông tin cho tài khoản
-            updated = False
-            for os_type in ["usersWindows", "usersMacOS", "usersAndroid", "usersIOS"]:
-                for user in user_data.get(os_type, []):
-                    if user.get('account') == account:
-                        if ip_address:
-                            user['ip'] = ip_address
-                        if gps_info:
-                            user['gps_info'] = gps_info
-                        if wifi_name:
-                            user['wifi_name'] = wifi_name
-                        if online_status:
-                            user['online_status'] = online_status
-                        updated = True
+            # Lấy thông tin người dùng và hệ điều hành
+            user = user_info['user']
+            os_type = user_info['os_type']
             
-            if updated:
+            # Tìm vị trí người dùng trong mảng
+            user_index = -1
+            for i, u in enumerate(user_data.get(os_type, [])):
+                if u.get('account') == account:
+                    user_index = i
+                    break
+            
+            if user_index >= 0:
+                # Cập nhật thông tin người dùng
+                if ip_address:
+                    user_data[os_type][user_index]['ip'] = ip_address
+                if gps_info:
+                    user_data[os_type][user_index]['gps_info'] = gps_info
+                if wifi_name:
+                    user_data[os_type][user_index]['wifi_name'] = wifi_name
+                if online_status:
+                    user_data[os_type][user_index]['online_status'] = online_status
+                    print(f"Cập nhật trạng thái online thành: {online_status}")
+                
                 # Lưu dữ liệu người dùng
                 save_user_data(user_data)
+                print(f"Đã cập nhật thông tin cho tài khoản {account}")
                 return jsonify({"status": "success", "message": "Đã cập nhật thông tin người dùng thành công"})
             else:
+                print(f"Không tìm thấy tài khoản {account} trong {os_type}")
                 return jsonify({"status": "error", "message": "Không tìm thấy tài khoản"})
         except Exception as e:
+            print(f"Lỗi khi cập nhật thông tin người dùng: {str(e)}")
             return jsonify({
                 "status": "error",
                 "message": str(e)
@@ -219,47 +252,53 @@ def setup_auth_routes(app):
             
             print(f"Yêu cầu xác thực cho tài khoản: {username}")
             
-            # Kiểm tra thông tin đăng nhập admin
+            # Kiểm tra thông tin đăng nhập
             credentials = load_credentials()
             
-            # Nếu không có file credentials.json hoặc file trống, sử dụng thông tin mặc định
-            if not credentials:
-                if username == 'admin' and password == 'admin':
-                    print("Xác thực admin thành công")
-                    return jsonify({
-                        "status": "success",
-                        "message": "Đăng nhập thành công!",
-                        "user": {"role": "admin"}
-                    })
-            else:
-                # Kiểm tra thông tin đăng nhập admin từ file
-                if username in credentials and credentials[username] == password:
-                    print("Xác thực admin từ file thành công")
-                    return jsonify({
-                        "status": "success",
-                        "message": "Đăng nhập thành công!",
-                        "user": {"role": "admin"}
-                    })
-            
-            # Nếu không phải admin, kiểm tra trong danh sách người dùng
-            user, os_type = find_user_by_account(username)
-            
-            if user and user.get('password') == password:
-                print(f"Xác thực người dùng thành công: {username} ({os_type})")
+            # Kiểm tra nếu là admin
+            if username in credentials and credentials[username] == password:
+                print(f"Xác thực admin thành công: {username}")
                 return jsonify({
                     "status": "success",
                     "message": "Đăng nhập thành công!",
-                    "user": user
+                    "user": {
+                        "username": username,
+                        "role": "admin"
+                    }
                 })
-            
-            print(f"Xác thực thất bại cho tài khoản: {username}")
-            return jsonify({
-                "status": "error",
-                "message": "Tên đăng nhập hoặc mật khẩu không đúng!"
-            })
+            else:
+                # Nếu không phải admin, kiểm tra trong danh sách người dùng
+                user_info = find_user_by_account(username)
+                
+                if user_info:
+                    user = user_info['user']
+                    os_type = user_info['os_type']
+                    
+                    if user.get('password') == password:
+                        print(f"Xác thực người dùng thành công: {username} ({os_type})")
+                        return jsonify({
+                            "status": "success",
+                            "message": "Đăng nhập thành công!",
+                            "user": {
+                                "username": username,
+                                "account": user.get('account'),
+                                "name": user.get('name'),
+                                "email": user.get('email', ''),
+                                "limited": user.get('limited', 'Unlimited'),
+                                "status": user.get('status', 'Active'),
+                                "role": "user",
+                                "os_type": os_type
+                            }
+                        })
+                
+                print(f"Xác thực thất bại cho tài khoản: {username}")
+                return jsonify({
+                    "status": "error",
+                    "message": "Tên đăng nhập hoặc mật khẩu không chính xác!"
+                })
         except Exception as e:
             print(f"Lỗi khi xác thực: {str(e)}")
             return jsonify({
                 "status": "error",
-                "message": str(e)
+                "message": f"Lỗi xác thực: {str(e)}"
             }) 
