@@ -614,7 +614,7 @@ class SlideStackedWidget(QStackedWidget):
 class LoginWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Đăng Nhập - Ứng Dụng Dịch")
+        self.setWindowTitle("Learning Automation")
         self.setFixedSize(900, 600)
         self.setWindowIcon(QIcon("icon.png"))  # Thêm icon nếu có
         
@@ -711,10 +711,32 @@ class LoginWindow(QMainWindow):
         desc_label.setAlignment(Qt.AlignCenter)
         desc_label.setStyleSheet("color: white; font-size: 16px;")
         
+        # Thông tin liên hệ
+        contact_label = QLabel("Liên hệ hỗ trợ:")
+        contact_label.setAlignment(Qt.AlignCenter)
+        contact_label.setStyleSheet("color: white; font-size: 14px; font-weight: bold; margin-top: 10px;")
+        
+        email_label = QLabel("Email: support@translateapp.com")
+        email_label.setAlignment(Qt.AlignCenter)
+        email_label.setStyleSheet("color: white; font-size: 12px;")
+        
+        phone_label = QLabel("Hotline: 0123 456 789")
+        phone_label.setAlignment(Qt.AlignCenter)
+        phone_label.setStyleSheet("color: white; font-size: 12px;")
+        
+        website_label = QLabel("Website: www.translateapp.com")
+        website_label.setAlignment(Qt.AlignCenter)
+        website_label.setStyleSheet("color: white; font-size: 12px;")
+        
         left_layout.addStretch()
         left_layout.addWidget(logo_label)
         left_layout.addSpacing(20)
         left_layout.addWidget(desc_label)
+        left_layout.addSpacing(40)
+        left_layout.addWidget(contact_label)
+        left_layout.addWidget(email_label)
+        left_layout.addWidget(phone_label)
+        left_layout.addWidget(website_label)
         left_layout.addStretch()
         
         # Panel bên phải (đăng nhập)
@@ -991,7 +1013,7 @@ class LoginWindow(QMainWindow):
             def __init__(self, parent=None):
                 super().__init__(parent)
                 self.setAutoFillBackground(False)
-                
+            
             def paintEvent(self, event):
                 painter = QPainter(self)
                 painter.setRenderHint(QPainter.Antialiasing)
@@ -1030,7 +1052,7 @@ class LoginWindow(QMainWindow):
         
         right_layout = QVBoxLayout(right_panel)
         right_layout.setAlignment(Qt.AlignCenter)
-        right_layout.setContentsMargins(80, 50, 30, 50)  # Tăng margin bên trái để tránh text bị che bởi đường cong
+        right_layout.setContentsMargins(30, 50, 80, 50)  # Tăng margin bên phải để tránh text bị che bởi đường cong
         
         # Logo hoặc hình ảnh
         logo_label = QLabel()
@@ -1043,10 +1065,32 @@ class LoginWindow(QMainWindow):
         desc_label.setAlignment(Qt.AlignCenter)
         desc_label.setStyleSheet("color: white; font-size: 16px;")
         
+        # Thông tin liên hệ
+        contact_label = QLabel("Liên hệ hỗ trợ:")
+        contact_label.setAlignment(Qt.AlignCenter)
+        contact_label.setStyleSheet("color: white; font-size: 14px; font-weight: bold; margin-top: 10px;")
+        
+        email_label = QLabel("Email: support@translateapp.com")
+        email_label.setAlignment(Qt.AlignCenter)
+        email_label.setStyleSheet("color: white; font-size: 12px;")
+        
+        phone_label = QLabel("Hotline: 0123 456 789")
+        phone_label.setAlignment(Qt.AlignCenter)
+        phone_label.setStyleSheet("color: white; font-size: 12px;")
+        
+        website_label = QLabel("Website: www.translateapp.com")
+        website_label.setAlignment(Qt.AlignCenter)
+        website_label.setStyleSheet("color: white; font-size: 12px;")
+        
         right_layout.addStretch()
         right_layout.addWidget(logo_label)
         right_layout.addSpacing(20)
         right_layout.addWidget(desc_label)
+        right_layout.addSpacing(40)
+        right_layout.addWidget(contact_label)
+        right_layout.addWidget(email_label)
+        right_layout.addWidget(phone_label)
+        right_layout.addWidget(website_label)
         right_layout.addStretch()
         
         # Thêm các panel vào layout chính
@@ -1219,7 +1263,7 @@ class LoginWindow(QMainWindow):
                 # Đảm bảo user_info có trường account
                 if 'account' not in self.user_info:
                     self.user_info['account'] = username
-
+                
                 # Lấy thông tin thiết bị
                 ip_address = get_public_ip()
                 device_info = get_device_info()
@@ -1646,7 +1690,7 @@ class LoginWindow(QMainWindow):
             print(f"Không thể lưu biểu tượng lỗi: {str(e)}")
         
         return pixmap
-
+    
     def register(self):
         fullname = self.fullname_input.text()
         email = self.email_input.text()
