@@ -718,7 +718,7 @@ class LoginWindow(QMainWindow):
         
         email_label = QLabel("<a href='mailto:support@translateapp.com'>Email: support@translateapp.com</a>")
         email_label.setAlignment(Qt.AlignCenter)
-        email_label.setStyleSheet("color: white; font-size: 12px;")
+        email_label.setStyleSheet("color: #FFD700; font-size: 12px;")
         email_label.setOpenExternalLinks(True)
         
         phone_label = QLabel("Hotline: 0123 456 789")
@@ -727,12 +727,12 @@ class LoginWindow(QMainWindow):
         
         website_label = QLabel("<a href='http://www.translateapp.com'>Website: www.translateapp.com</a>")
         website_label.setAlignment(Qt.AlignCenter)
-        website_label.setStyleSheet("color: white; font-size: 12px;")
+        website_label.setStyleSheet("color: #FFD700; font-size: 12px;")
         website_label.setOpenExternalLinks(True)
         
-        facebook_label = QLabel("<a href='http://www.facebook.com/translateapp'>Facebook: Translate App</a>")
+        facebook_label = QLabel("<a href='https://www.facebook.com/profile.php?id=100076413275461'>Facebook: Phạm Hoàng Ninh</a>")
         facebook_label.setAlignment(Qt.AlignCenter)
-        facebook_label.setStyleSheet("color: white; font-size: 12px;")
+        facebook_label.setStyleSheet("color: #FFD700; font-size: 12px;")
         facebook_label.setOpenExternalLinks(True)
         
         author_label = QLabel("Tác giả: Nguyễn Văn A")
@@ -1085,7 +1085,7 @@ class LoginWindow(QMainWindow):
         
         email_label = QLabel("<a href='mailto:support@translateapp.com'>Email: support@translateapp.com</a>")
         email_label.setAlignment(Qt.AlignCenter)
-        email_label.setStyleSheet("color: white; font-size: 12px;")
+        email_label.setStyleSheet("color: #FFD700; font-size: 12px;")
         email_label.setOpenExternalLinks(True)
         
         phone_label = QLabel("Hotline: 0123 456 789")
@@ -1094,12 +1094,12 @@ class LoginWindow(QMainWindow):
         
         website_label = QLabel("<a href='http://www.translateapp.com'>Website: www.translateapp.com</a>")
         website_label.setAlignment(Qt.AlignCenter)
-        website_label.setStyleSheet("color: white; font-size: 12px;")
+        website_label.setStyleSheet("color: #FFD700; font-size: 12px;")
         website_label.setOpenExternalLinks(True)
         
         facebook_label = QLabel("<a href='http://www.facebook.com/translateapp'>Facebook: Translate App</a>")
         facebook_label.setAlignment(Qt.AlignCenter)
-        facebook_label.setStyleSheet("color: white; font-size: 12px;")
+        facebook_label.setStyleSheet("color: #FFD700; font-size: 12px;")
         facebook_label.setOpenExternalLinks(True)
         
         author_label = QLabel("Tác giả: Nguyễn Văn A")
