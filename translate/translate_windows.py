@@ -14,7 +14,7 @@ from datetime import datetime
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
                             QHBoxLayout, QLabel, QLineEdit, QPushButton, 
                             QFrame, QMessageBox, QCheckBox, QStackedWidget,
-                            QGraphicsOpacityEffect)
+                            QGraphicsOpacityEffect, QDialog)
 from PyQt5.QtGui import QIcon, QPixmap, QFont, QColor, QPainter, QBrush, QPen, QLinearGradient, QPainterPath
 from PyQt5.QtCore import Qt, QSize, QRect, QPropertyAnimation, QEasingCurve, pyqtProperty, QPoint, QParallelAnimationGroup, QSequentialAnimationGroup, QTimer, QCoreApplication
 
@@ -1073,7 +1073,119 @@ class LoginWindow(QMainWindow):
             data = response.json()
             
             if response.status_code == 200 and data.get('status') == 'success':
-                QMessageBox.information(self, "Thành công", data.get('message', 'Đăng nhập thành công!'))
+                # Tạo thông báo đăng nhập thành công đẹp hơn với hiệu ứng
+                success_dialog = QDialog(self)
+                success_dialog.setWindowTitle("Đăng nhập thành công")
+                success_dialog.setFixedSize(400, 300)
+                success_dialog.setWindowFlags(Qt.Dialog | Qt.FramelessWindowHint)  # Loại bỏ viền cửa sổ
+                success_dialog.setAttribute(Qt.WA_TranslucentBackground)  # Cho phép nền trong suốt
+                success_dialog.setStyleSheet("""
+                    QDialog {
+                        background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #6a11cb, stop:1 #2575fc);
+                        border-radius: 15px;
+                        border: 2px solid rgba(255, 255, 255, 0.2);
+                    }
+                    QLabel {
+                        color: white;
+                        font-family: 'Segoe UI', Arial, sans-serif;
+                    }
+                    QPushButton {
+                        background-color: rgba(255, 255, 255, 0.2);
+                        color: white;
+                        border: none;
+                        border-radius: 5px;
+                        padding: 10px 20px;
+                        font-weight: bold;
+                        font-size: 14px;
+                    }
+                    QPushButton:hover {
+                        background-color: rgba(255, 255, 255, 0.3);
+                    }
+                    QPushButton:pressed {
+                        background-color: rgba(255, 255, 255, 0.1);
+                    }
+                    QWidget#info_widget {
+                        background-color: rgba(255, 255, 255, 0.1);
+                        border-radius: 10px;
+                        padding: 10px;
+                    }
+                """)
+                
+                # Tạo hiệu ứng xuất hiện
+                opacity_effect = QGraphicsOpacityEffect(success_dialog)
+                success_dialog.setGraphicsEffect(opacity_effect)
+                opacity_effect.setOpacity(0)
+                
+                # Layout chính
+                main_layout = QVBoxLayout(success_dialog)
+                main_layout.setContentsMargins(20, 20, 20, 20)
+                main_layout.setSpacing(15)
+                
+                # Tạo container widget để áp dụng hiệu ứng
+                container = QWidget()
+                layout = QVBoxLayout(container)
+                layout.setContentsMargins(0, 0, 0, 0)
+                layout.setSpacing(15)
+                main_layout.addWidget(container)
+                
+                # Icon thành công
+                icon_label = QLabel()
+                icon_pixmap = self.create_success_icon() if not QPixmap("translate/assets/success.png").isNull() else self.create_success_icon()
+                icon_label.setPixmap(icon_pixmap.scaled(64, 64, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+                icon_label.setAlignment(Qt.AlignCenter)
+                layout.addWidget(icon_label)
+                
+                # Tiêu đề
+                title_label = QLabel("Đăng nhập thành công!")
+                title_label.setStyleSheet("font-size: 24px; font-weight: bold; margin-bottom: 10px;")
+                title_label.setAlignment(Qt.AlignCenter)
+                layout.addWidget(title_label)
+                
+                # Thông tin người dùng
+                user_info_layout = QVBoxLayout()
+                user_info_layout.setSpacing(8)
+                
+                # Lấy thông tin từ response
+                user_data = data.get('user', {})
+                name = user_data.get('name', username)
+                account = user_data.get('account', username)
+                email = user_data.get('email', '')
+                status = user_data.get('status', 'Active')
+                limited = user_data.get('limited', 'Unlimited')
+                
+                # Hiển thị thông tin
+                info_labels = [
+                    f"<b>Tên người dùng:</b> {name}",
+                    f"<b>Tài khoản:</b> {account}",
+                    f"<b>Email:</b> {email}" if email else "",
+                    f"<b>Trạng thái:</b> {status}",
+                    f"<b>Thời hạn:</b> {limited}"
+                ]
+                
+                for info in info_labels:
+                    if info:  # Chỉ hiển thị các trường có giá trị
+                        info_label = QLabel(info)
+                        info_label.setStyleSheet("font-size: 14px; padding: 5px;")
+                        user_info_layout.addWidget(info_label)
+                
+                # Thêm thông tin vào layout chính
+                info_widget = QWidget()
+                info_widget.setObjectName("info_widget")  # Đặt ID cho widget để áp dụng CSS
+                info_widget.setLayout(user_info_layout)
+                layout.addWidget(info_widget)
+                
+                # Thêm thông báo
+                message_label = QLabel("Chào mừng bạn quay trở lại! Hệ thống đang chuẩn bị dữ liệu...")
+                message_label.setStyleSheet("font-size: 14px; font-style: italic; margin-top: 10px;")
+                message_label.setAlignment(Qt.AlignCenter)
+                message_label.setWordWrap(True)
+                layout.addWidget(message_label)
+                
+                # Nút đóng
+                close_button = QPushButton("Tiếp tục")
+                close_button.setCursor(Qt.PointingHandCursor)
+                close_button.clicked.connect(success_dialog.accept)
+                layout.addWidget(close_button)
                 
                 # Lưu thông tin người dùng nếu cần
                 if self.remember_checkbox.isChecked():
@@ -1165,24 +1277,349 @@ class LoginWindow(QMainWindow):
                 print(f"Tên WiFi: {wifi_name}")
                 print(f"Thông tin GPS: {gps_info}")
                 
+                # Thêm các widget vào container thay vì layout chính
+                container.layout().addWidget(icon_label)
+                container.layout().addWidget(title_label)
+                container.layout().addWidget(info_widget)
+                container.layout().addWidget(message_label)
+                container.layout().addWidget(close_button)
+
+                # Tạo hiệu ứng xuất hiện
+                fade_in_anim = QPropertyAnimation(opacity_effect, b"opacity")
+                fade_in_anim.setDuration(500)
+                fade_in_anim.setStartValue(0)
+                fade_in_anim.setEndValue(1)
+                fade_in_anim.setEasingCurve(QEasingCurve.OutCubic)
+
+                # Tạo hiệu ứng di chuyển từ trên xuống
+                move_anim = QPropertyAnimation(container, b"pos")
+                move_anim.setDuration(500)
+                move_anim.setStartValue(QPoint(0, -50))
+                move_anim.setEndValue(QPoint(0, 0))
+                move_anim.setEasingCurve(QEasingCurve.OutBack)
+
+                # Nhóm các hiệu ứng lại
+                anim_group = QParallelAnimationGroup()
+                anim_group.addAnimation(fade_in_anim)
+                anim_group.addAnimation(move_anim)
+
+                # Hiển thị dialog
+                success_dialog.show()
+
+                # Bắt đầu hiệu ứng
+                anim_group.start()
+
+                # Đợi người dùng đóng dialog
+                success_dialog.exec_()
+                
                 # Chuyển đến màn hình chính
                 self.show_main_app()
             else:
                 error_message = data.get('message', 'Tên đăng nhập hoặc mật khẩu không chính xác!')
-                QMessageBox.critical(self, "Lỗi đăng nhập", error_message)
+                
+                # Tạo thông báo lỗi đẹp hơn với hiệu ứng
+                error_dialog = QDialog(self)
+                error_dialog.setWindowTitle("Lỗi đăng nhập")
+                error_dialog.setFixedSize(350, 200)
+                error_dialog.setWindowFlags(Qt.Dialog | Qt.FramelessWindowHint)  # Loại bỏ viền cửa sổ
+                error_dialog.setAttribute(Qt.WA_TranslucentBackground)  # Cho phép nền trong suốt
+                error_dialog.setStyleSheet("""
+                    QDialog {
+                        background-color: #2c2c2c;
+                        border-radius: 10px;
+                        border: 1px solid #444;
+                    }
+                    QLabel {
+                        color: white;
+                        font-family: 'Segoe UI', Arial, sans-serif;
+                    }
+                    QPushButton {
+                        background-color: #F44336;
+                        color: white;
+                        border: none;
+                        border-radius: 5px;
+                        padding: 8px 16px;
+                        font-weight: bold;
+                    }
+                    QPushButton:hover {
+                        background-color: #D32F2F;
+                    }
+                    QPushButton:pressed {
+                        background-color: #B71C1C;
+                    }
+                """)
+                
+                # Tạo hiệu ứng xuất hiện
+                opacity_effect = QGraphicsOpacityEffect(error_dialog)
+                error_dialog.setGraphicsEffect(opacity_effect)
+                opacity_effect.setOpacity(0)
+                
+                # Layout chính
+                main_layout = QVBoxLayout(error_dialog)
+                main_layout.setContentsMargins(20, 20, 20, 20)
+                main_layout.setSpacing(15)
+                
+                # Tạo container widget để áp dụng hiệu ứng
+                container = QWidget()
+                layout = QVBoxLayout(container)
+                layout.setContentsMargins(0, 0, 0, 0)
+                layout.setSpacing(15)
+                main_layout.addWidget(container)
+                
+                # Icon lỗi
+                icon_label = QLabel()
+                icon_pixmap = self.create_error_icon()
+                icon_label.setPixmap(icon_pixmap.scaled(48, 48, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+                icon_label.setAlignment(Qt.AlignCenter)
+                layout.addWidget(icon_label)
+                
+                # Tiêu đề
+                title_label = QLabel("Đăng nhập thất bại")
+                title_label.setStyleSheet("font-size: 18px; font-weight: bold; margin-bottom: 10px;")
+                title_label.setAlignment(Qt.AlignCenter)
+                layout.addWidget(title_label)
+                
+                # Thông báo lỗi
+                message_label = QLabel(error_message)
+                message_label.setStyleSheet("font-size: 14px;")
+                message_label.setAlignment(Qt.AlignCenter)
+                message_label.setWordWrap(True)
+                layout.addWidget(message_label)
+                
+                # Nút đóng
+                close_button = QPushButton("Thử lại")
+                close_button.setCursor(Qt.PointingHandCursor)
+                close_button.clicked.connect(error_dialog.accept)
+                layout.addWidget(close_button)
+                
+                # Tạo hiệu ứng xuất hiện
+                fade_in_anim = QPropertyAnimation(opacity_effect, b"opacity")
+                fade_in_anim.setDuration(300)
+                fade_in_anim.setStartValue(0)
+                fade_in_anim.setEndValue(1)
+                fade_in_anim.setEasingCurve(QEasingCurve.OutCubic)
+
+                # Tạo hiệu ứng rung lắc
+                shake_anim = QSequentialAnimationGroup()
+                for i in range(5):
+                    move_right = QPropertyAnimation(error_dialog, b"pos")
+                    move_right.setDuration(50)
+                    move_right.setStartValue(QPoint(error_dialog.x(), error_dialog.y()))
+                    move_right.setEndValue(QPoint(error_dialog.x() + 10, error_dialog.y()))
+                    
+                    move_left = QPropertyAnimation(error_dialog, b"pos")
+                    move_left.setDuration(50)
+                    move_left.setStartValue(QPoint(error_dialog.x() + 10, error_dialog.y()))
+                    move_left.setEndValue(QPoint(error_dialog.x(), error_dialog.y()))
+                    
+                    shake_anim.addAnimation(move_right)
+                    shake_anim.addAnimation(move_left)
+
+                # Nhóm các hiệu ứng lại
+                anim_group = QSequentialAnimationGroup()
+                anim_group.addAnimation(fade_in_anim)
+                anim_group.addAnimation(shake_anim)
+
+                # Hiển thị dialog
+                error_dialog.show()
+
+                # Bắt đầu hiệu ứng
+                anim_group.start()
+
+                # Đợi người dùng đóng dialog
+                error_dialog.exec_()
         
         except requests.exceptions.ConnectionError:
-            QMessageBox.critical(self, "Lỗi kết nối", "Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối internet!")
+            self.show_error_dialog("Lỗi kết nối", "Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối internet!")
         except requests.exceptions.Timeout:
-            QMessageBox.critical(self, "Lỗi kết nối", "Kết nối đến máy chủ quá thời gian. Vui lòng thử lại sau!")
+            self.show_error_dialog("Lỗi kết nối", "Kết nối đến máy chủ quá thời gian. Vui lòng thử lại sau!")
         except requests.exceptions.RequestException as e:
-            QMessageBox.critical(self, "Lỗi kết nối", f"Lỗi không xác định: {str(e)}")
+            self.show_error_dialog("Lỗi kết nối", f"Lỗi không xác định: {str(e)}")
         except ValueError:
-            QMessageBox.critical(self, "Lỗi xử lý", "Phản hồi từ máy chủ không hợp lệ!")
+            self.show_error_dialog("Lỗi xử lý", "Phản hồi từ máy chủ không hợp lệ!")
         finally:
             self.login_button.setEnabled(True)
             self.login_button.setText("ĐĂNG NHẬP")
-    
+
+    def show_error_dialog(self, title, message):
+        """Hiển thị thông báo lỗi đẹp hơn với hiệu ứng"""
+        error_dialog = QDialog(self)
+        error_dialog.setWindowTitle(title)
+        error_dialog.setFixedSize(350, 200)
+        error_dialog.setWindowFlags(Qt.Dialog | Qt.FramelessWindowHint)  # Loại bỏ viền cửa sổ
+        error_dialog.setAttribute(Qt.WA_TranslucentBackground)  # Cho phép nền trong suốt
+        error_dialog.setStyleSheet("""
+            QDialog {
+                background-color: #2c2c2c;
+                border-radius: 10px;
+                border: 1px solid #444;
+            }
+            QLabel {
+                color: white;
+                font-family: 'Segoe UI', Arial, sans-serif;
+            }
+            QPushButton {
+                background-color: #F44336;
+                color: white;
+                border: none;
+                border-radius: 5px;
+                padding: 8px 16px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #D32F2F;
+            }
+            QPushButton:pressed {
+                background-color: #B71C1C;
+            }
+        """)
+        
+        # Tạo hiệu ứng xuất hiện
+        opacity_effect = QGraphicsOpacityEffect(error_dialog)
+        error_dialog.setGraphicsEffect(opacity_effect)
+        opacity_effect.setOpacity(0)
+        
+        # Layout chính
+        main_layout = QVBoxLayout(error_dialog)
+        main_layout.setContentsMargins(20, 20, 20, 20)
+        main_layout.setSpacing(15)
+        
+        # Tạo container widget để áp dụng hiệu ứng
+        container = QWidget()
+        layout = QVBoxLayout(container)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(15)
+        main_layout.addWidget(container)
+        
+        # Icon lỗi
+        icon_label = QLabel()
+        icon_pixmap = self.create_error_icon()
+        icon_label.setPixmap(icon_pixmap.scaled(48, 48, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+        icon_label.setAlignment(Qt.AlignCenter)
+        layout.addWidget(icon_label)
+        
+        # Tiêu đề
+        title_label = QLabel(title)
+        title_label.setStyleSheet("font-size: 18px; font-weight: bold; margin-bottom: 10px;")
+        title_label.setAlignment(Qt.AlignCenter)
+        layout.addWidget(title_label)
+        
+        # Thông báo lỗi
+        message_label = QLabel(message)
+        message_label.setStyleSheet("font-size: 14px;")
+        message_label.setAlignment(Qt.AlignCenter)
+        message_label.setWordWrap(True)
+        layout.addWidget(message_label)
+        
+        # Nút đóng
+        close_button = QPushButton("Đóng")
+        close_button.setCursor(Qt.PointingHandCursor)
+        close_button.clicked.connect(error_dialog.accept)
+        layout.addWidget(close_button)
+        
+        # Tạo hiệu ứng xuất hiện
+        fade_in_anim = QPropertyAnimation(opacity_effect, b"opacity")
+        fade_in_anim.setDuration(300)
+        fade_in_anim.setStartValue(0)
+        fade_in_anim.setEndValue(1)
+        fade_in_anim.setEasingCurve(QEasingCurve.OutCubic)
+        
+        # Tạo hiệu ứng rung lắc
+        shake_anim = QSequentialAnimationGroup()
+        for i in range(3):  # Giảm số lần rung lắc
+            move_right = QPropertyAnimation(error_dialog, b"pos")
+            move_right.setDuration(50)
+            move_right.setStartValue(QPoint(error_dialog.x(), error_dialog.y()))
+            move_right.setEndValue(QPoint(error_dialog.x() + 10, error_dialog.y()))
+            
+            move_left = QPropertyAnimation(error_dialog, b"pos")
+            move_left.setDuration(50)
+            move_left.setStartValue(QPoint(error_dialog.x() + 10, error_dialog.y()))
+            move_left.setEndValue(QPoint(error_dialog.x(), error_dialog.y()))
+            
+            shake_anim.addAnimation(move_right)
+            shake_anim.addAnimation(move_left)
+        
+        # Nhóm các hiệu ứng lại
+        anim_group = QSequentialAnimationGroup()
+        anim_group.addAnimation(fade_in_anim)
+        anim_group.addAnimation(shake_anim)
+        
+        # Hiển thị dialog
+        error_dialog.show()
+        
+        # Bắt đầu hiệu ứng
+        anim_group.start()
+        
+        # Đợi người dùng đóng dialog
+        error_dialog.exec_()
+
+    def create_success_icon(self):
+        """Tạo biểu tượng thành công bằng mã nếu không tìm thấy file hình ảnh"""
+        # Tạo một pixmap trống với kích thước 64x64
+        pixmap = QPixmap(64, 64)
+        pixmap.fill(Qt.transparent)  # Đặt nền trong suốt
+        
+        # Tạo painter để vẽ lên pixmap
+        painter = QPainter(pixmap)
+        painter.setRenderHint(QPainter.Antialiasing)
+        
+        # Vẽ hình tròn màu xanh lá
+        painter.setPen(Qt.NoPen)
+        painter.setBrush(QBrush(QColor("#4CAF50")))
+        painter.drawEllipse(4, 4, 56, 56)
+        
+        # Vẽ dấu tích màu trắng
+        painter.setPen(QPen(QColor("white"), 4, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
+        painter.drawLine(16, 32, 28, 44)
+        painter.drawLine(28, 44, 48, 20)
+        
+        # Kết thúc vẽ
+        painter.end()
+        
+        # Lưu biểu tượng vào thư mục assets nếu thư mục tồn tại
+        try:
+            if os.path.exists("translate/assets"):
+                pixmap.save("translate/assets/success.png")
+                print("Đã tạo và lưu biểu tượng thành công")
+        except Exception as e:
+            print(f"Không thể lưu biểu tượng thành công: {str(e)}")
+        
+        return pixmap
+
+    def create_error_icon(self):
+        """Tạo biểu tượng lỗi bằng mã nếu không tìm thấy file hình ảnh"""
+        # Tạo một pixmap trống với kích thước 48x48
+        pixmap = QPixmap(48, 48)
+        pixmap.fill(Qt.transparent)  # Đặt nền trong suốt
+        
+        # Tạo painter để vẽ lên pixmap
+        painter = QPainter(pixmap)
+        painter.setRenderHint(QPainter.Antialiasing)
+        
+        # Vẽ hình tròn màu đỏ
+        painter.setPen(Qt.NoPen)
+        painter.setBrush(QBrush(QColor("#F44336")))
+        painter.drawEllipse(2, 2, 44, 44)
+        
+        # Vẽ dấu X màu trắng
+        painter.setPen(QPen(QColor("white"), 4, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
+        painter.drawLine(14, 14, 34, 34)
+        painter.drawLine(14, 34, 34, 14)
+        
+        # Kết thúc vẽ
+        painter.end()
+        
+        # Lưu biểu tượng vào thư mục assets nếu thư mục tồn tại
+        try:
+            if os.path.exists("translate/assets"):
+                pixmap.save("translate/assets/error.png")
+                print("Đã tạo và lưu biểu tượng lỗi")
+        except Exception as e:
+            print(f"Không thể lưu biểu tượng lỗi: {str(e)}")
+        
+        return pixmap
+
     def register(self):
         fullname = self.fullname_input.text()
         email = self.email_input.text()
@@ -1365,7 +1802,7 @@ class LoginWindow(QMainWindow):
         """Tạo địa chỉ MAC ngẫu nhiên"""
         import random
         return ":".join(["{:02x}".format(random.randint(0, 255)) for _ in range(6)]).upper()
-    
+
     def show_main_app(self):
         # Tạo và hiển thị màn hình chính của ứng dụng
         self.main_app = MainApp(self.user_info)
