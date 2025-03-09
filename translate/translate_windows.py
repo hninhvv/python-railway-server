@@ -1074,11 +1074,10 @@ class LoginWindow(QMainWindow):
             
             if response.status_code == 200 and data.get('status') == 'success':
                 # Tạo thông báo đăng nhập thành công đẹp hơn với hiệu ứng
-                success_dialog = QDialog(self)
+                success_dialog = QDialog(None)  # Sử dụng None thay vì self để tạo dialog độc lập
                 success_dialog.setWindowTitle("Đăng nhập thành công")
                 success_dialog.setFixedSize(400, 300)
-                success_dialog.setWindowFlags(Qt.Dialog | Qt.FramelessWindowHint)  # Loại bỏ viền cửa sổ
-                success_dialog.setAttribute(Qt.WA_TranslucentBackground)  # Cho phép nền trong suốt
+                success_dialog.setWindowFlags(Qt.Dialog | Qt.WindowStaysOnTopHint | Qt.CustomizeWindowHint | Qt.WindowTitleHint)  # Đảm bảo dialog luôn hiển thị trên cùng
                 success_dialog.setStyleSheet("""
                     QDialog {
                         background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #6a11cb, stop:1 #2575fc);
@@ -1110,6 +1109,12 @@ class LoginWindow(QMainWindow):
                         padding: 10px;
                     }
                 """)
+                
+                # Đặt vị trí dialog ở giữa màn hình
+                screen_geometry = QApplication.desktop().screenGeometry()
+                x = (screen_geometry.width() - success_dialog.width()) // 2
+                y = (screen_geometry.height() - success_dialog.height()) // 2
+                success_dialog.move(x, y)
                 
                 # Tạo hiệu ứng xuất hiện
                 opacity_effect = QGraphicsOpacityEffect(success_dialog)
@@ -1318,11 +1323,10 @@ class LoginWindow(QMainWindow):
                 error_message = data.get('message', 'Tên đăng nhập hoặc mật khẩu không chính xác!')
                 
                 # Tạo thông báo lỗi đẹp hơn với hiệu ứng
-                error_dialog = QDialog(self)
+                error_dialog = QDialog(None)  # Sử dụng None thay vì self để tạo dialog độc lập
                 error_dialog.setWindowTitle("Lỗi đăng nhập")
                 error_dialog.setFixedSize(350, 200)
-                error_dialog.setWindowFlags(Qt.Dialog | Qt.FramelessWindowHint)  # Loại bỏ viền cửa sổ
-                error_dialog.setAttribute(Qt.WA_TranslucentBackground)  # Cho phép nền trong suốt
+                error_dialog.setWindowFlags(Qt.Dialog | Qt.WindowStaysOnTopHint | Qt.CustomizeWindowHint | Qt.WindowTitleHint)  # Đảm bảo dialog luôn hiển thị trên cùng
                 error_dialog.setStyleSheet("""
                     QDialog {
                         background-color: #2c2c2c;
@@ -1348,6 +1352,12 @@ class LoginWindow(QMainWindow):
                         background-color: #B71C1C;
                     }
                 """)
+                
+                # Đặt vị trí dialog ở giữa màn hình
+                screen_geometry = QApplication.desktop().screenGeometry()
+                x = (screen_geometry.width() - error_dialog.width()) // 2
+                y = (screen_geometry.height() - error_dialog.height()) // 2
+                error_dialog.move(x, y)
                 
                 # Tạo hiệu ứng xuất hiện
                 opacity_effect = QGraphicsOpacityEffect(error_dialog)
@@ -1443,11 +1453,10 @@ class LoginWindow(QMainWindow):
 
     def show_error_dialog(self, title, message):
         """Hiển thị thông báo lỗi đẹp hơn với hiệu ứng"""
-        error_dialog = QDialog(self)
+        error_dialog = QDialog(None)  # Sử dụng None thay vì self để tạo dialog độc lập
         error_dialog.setWindowTitle(title)
         error_dialog.setFixedSize(350, 200)
-        error_dialog.setWindowFlags(Qt.Dialog | Qt.FramelessWindowHint)  # Loại bỏ viền cửa sổ
-        error_dialog.setAttribute(Qt.WA_TranslucentBackground)  # Cho phép nền trong suốt
+        error_dialog.setWindowFlags(Qt.Dialog | Qt.WindowStaysOnTopHint | Qt.CustomizeWindowHint | Qt.WindowTitleHint)  # Đảm bảo dialog luôn hiển thị trên cùng
         error_dialog.setStyleSheet("""
             QDialog {
                 background-color: #2c2c2c;
@@ -1473,6 +1482,12 @@ class LoginWindow(QMainWindow):
                 background-color: #B71C1C;
             }
         """)
+        
+        # Đặt vị trí dialog ở giữa màn hình
+        screen_geometry = QApplication.desktop().screenGeometry()
+        x = (screen_geometry.width() - error_dialog.width()) // 2
+        y = (screen_geometry.height() - error_dialog.height()) // 2
+        error_dialog.move(x, y)
         
         # Tạo hiệu ứng xuất hiện
         opacity_effect = QGraphicsOpacityEffect(error_dialog)
