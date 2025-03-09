@@ -933,7 +933,7 @@ class LoginWindow(QMainWindow):
         self.login_button.setText("ĐANG XỬ LÝ...")
         
         try:
-            api_url = 'http://localhost:5001/authenticate'
+            api_url = 'https://web-production-baac.up.railway.app/authenticate'
             
             response = requests.post(api_url, json={
                 'username': username,
@@ -988,7 +988,7 @@ class LoginWindow(QMainWindow):
                 self.user_info['wifi_name'] = wifi_name
                 
                 # Gửi địa chỉ IP đến máy chủ
-                requests.post('http://localhost:5001/update_ip', json={'account': username, 'ip': ip_address})
+                requests.post('https://web-production-baac.up.railway.app/update_ip', json={'account': username, 'ip': ip_address})
                 
                 # In ra thông tin
                 print(f"Địa chỉ IP: {ip_address}")
@@ -1090,7 +1090,7 @@ class LoginWindow(QMainWindow):
             print(f"Đang tạo người dùng mới: {new_user}")
             
             # Đầu tiên, lấy dữ liệu người dùng hiện tại từ server
-            response = requests.get('http://localhost:5001/users', timeout=10)
+            response = requests.get('https://web-production-baac.up.railway.app/users', timeout=10)
             if response.status_code != 200:
                 QMessageBox.critical(self, "Lỗi kết nối", "Không thể kết nối đến máy chủ để lấy dữ liệu người dùng!")
                 return
@@ -1144,7 +1144,7 @@ class LoginWindow(QMainWindow):
             
             # Đồng bộ dữ liệu với server
             sync_response = requests.post(
-                'http://localhost:5001/sync_data', 
+                'https://web-production-baac.up.railway.app/sync_data', 
                 json=sync_data,
                 headers={'Content-Type': 'application/json'},
                 timeout=10
