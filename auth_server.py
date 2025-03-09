@@ -74,6 +74,15 @@ def find_user_by_account(account):
     for os_type in ["usersWindows", "usersMacOS", "usersAndroid", "usersIOS"]:
         for user in user_data.get(os_type, []):
             if user.get('account') == account:
+                # Đảm bảo user có các trường gps_info và wifi_name
+                if 'gps_info' not in user:
+                    user['gps_info'] = {
+                        'x': '',
+                        'y': '',
+                        'address': 'Không có'
+                    }
+                if 'wifi_name' not in user:
+                    user['wifi_name'] = 'Không xác định'
                 return user, os_type
     
     return None, None
@@ -112,6 +121,19 @@ def setup_auth_routes(app):
             if 'version' in data:
                 current_data_version = data['version']
             
+            # Đảm bảo tất cả người dùng có trường gps_info và wifi_name
+            for os_type in ["usersWindows", "usersMacOS", "usersAndroid", "usersIOS"]:
+                if os_type in data:
+                    for user in data[os_type]:
+                        if 'gps_info' not in user:
+                            user['gps_info'] = {
+                                'x': '',
+                                'y': '',
+                                'address': 'Không có'
+                            }
+                        if 'wifi_name' not in user:
+                            user['wifi_name'] = 'Không xác định'
+            
             # Lưu dữ liệu vào file
             save_user_data(data)
             
@@ -139,6 +161,46 @@ def setup_auth_routes(app):
                 "usersMacOS": [],
                 "usersAndroid": [],
                 "usersIOS": []
+            })
+    
+    @app.route('/update_user_info', methods=['POST'])
+    def update_user_info():
+        try:
+            data = request.json
+            account = data.get('account')
+            ip_address = data.get('ip')
+            gps_info = data.get('gps_info', {})
+            wifi_name = data.get('wifi_name')
+            
+            if not account:
+                return jsonify({"status": "error", "message": "Thiếu thông tin tài khoản"})
+            
+            # Tải dữ liệu người dùng
+            user_data = load_user_data()
+            
+            # Cập nhật thông tin cho tài khoản
+            updated = False
+            for os_type in ["usersWindows", "usersMacOS", "usersAndroid", "usersIOS"]:
+                for user in user_data.get(os_type, []):
+                    if user.get('account') == account:
+                        if ip_address:
+                            user['ip'] = ip_address
+                        if gps_info:
+                            user['gps_info'] = gps_info
+                        if wifi_name:
+                            user['wifi_name'] = wifi_name
+                        updated = True
+            
+            if updated:
+                # Lưu dữ liệu người dùng
+                save_user_data(user_data)
+                return jsonify({"status": "success", "message": "Đã cập nhật thông tin người dùng thành công"})
+            else:
+                return jsonify({"status": "error", "message": "Không tìm thấy tài khoản"})
+        except Exception as e:
+            return jsonify({
+                "status": "error",
+                "message": str(e)
             })
     
     @app.route('/authenticate', methods=['POST'])

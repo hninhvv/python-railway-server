@@ -100,6 +100,7 @@ def update_user_info():
         account = data.get('account')
         ip_address = data.get('ip')
         gps_info = data.get('gps_info', {})
+        wifi_name = data.get('wifi_name')
         
         if not account:
             return jsonify({"status": "error", "message": "Thiếu thông tin tài khoản"})
@@ -121,6 +122,8 @@ def update_user_info():
                         user['ip'] = ip_address
                     if gps_info:
                         user['gps_info'] = gps_info
+                    if wifi_name:
+                        user['wifi_name'] = wifi_name
                     updated = True
         
         if updated:

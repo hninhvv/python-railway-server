@@ -521,27 +521,37 @@
                 user.account.toLowerCase().includes(searchTerm) || 
                 user.status.toLowerCase().includes(searchTerm) ||
                 user.limited.toLowerCase().includes(searchTerm) ||
-                (user.mac && user.mac.toLowerCase().includes(searchTerm))
+                (user.mac && user.mac.toLowerCase().includes(searchTerm)) ||
+                (user.gps_info && user.gps_info.address && user.gps_info.address.toLowerCase().includes(searchTerm)) ||
+                (user.wifi_name && user.wifi_name.toLowerCase().includes(searchTerm))
             );
             
             // Tạo các hàng cho bảng với người dùng đã lọc
             const fragment = document.createDocumentFragment();
             filteredUsers.forEach(user => {
-                // Xác định giá trị hiển thị cho mật khẩu và MAC
+                // Xác định giá trị hiển thị cho mật khẩu và GPS
                 const displayPassword = showPassword ? user.password : maskPassword(user.password);
                 const displayIP = showIP ? (user.ip || '') : maskIP(user.ip);
+                
+                // Lấy thông tin GPS và WiFi
+                const gpsInfo = user.gps_info || {};
+                const gpsCoords = gpsInfo.y && gpsInfo.x ? `${gpsInfo.y}, ${gpsInfo.x}` : 'Không có';
+                const gpsAddress = gpsInfo.address || 'Không có';
+                const wifiName = user.wifi_name || 'Không xác định';
                 
                 const newRow = document.createElement('tr');
                 newRow.setAttribute('onclick', 'selectRow(this)');
                 newRow.setAttribute('oncontextmenu', 'showContextMenu(event, this); return false;');
                 newRow.innerHTML = `
                     <td>${user.name}</td>
-                    <td>${user.email}</td>
+                    <td>${user.email || ''}</td>
                     <td>${user.account}</td>
-                    <td class="masked-text">${displayPassword}</td>
+                    <td class="masked-text" onclick="togglePasswordVisibility(event)">${displayPassword}</td>
                     <td>${user.limited}</td>
                     <td>${user.status}</td>
-                    <td class="masked-text">${displayIP}</td>
+                    <td class="masked-text">${gpsCoords}</td>
+                    <td>${gpsAddress}</td>
+                    <td>${wifiName}</td>
                 `;
                 fragment.appendChild(newRow);
             });
@@ -739,6 +749,18 @@
                             <label for="editIP">IP Address:</label>
                             <input type="text" id="editIP" placeholder="Enter IP address" autocomplete="off">
                         </div>
+                        <div class="form-group">
+                            <label for="editGPSCoords">GPS Coordinates (y, x):</label>
+                            <input type="text" id="editGPSCoords" placeholder="Enter GPS coordinates" autocomplete="off">
+                        </div>
+                        <div class="form-group">
+                            <label for="editGPSAddress">GPS Address:</label>
+                            <input type="text" id="editGPSAddress" placeholder="Enter GPS address" autocomplete="off">
+                        </div>
+                        <div class="form-group">
+                            <label for="editWiFi">WiFi Name:</label>
+                            <input type="text" id="editWiFi" placeholder="Enter WiFi name" autocomplete="off">
+                        </div>
                         <button onclick="saveEditUser()">Save Changes</button>
                     </div>
                 </div>
@@ -766,6 +788,16 @@
             
             document.getElementById('editStatus').value = selectedUser.status;
             
+            // Điền thông tin GPS và WiFi
+            const gpsInfo = selectedUser.gps_info || {};
+            if (gpsInfo.y && gpsInfo.x) {
+                document.getElementById('editGPSCoords').value = `${gpsInfo.y}, ${gpsInfo.x}`;
+            } else {
+                document.getElementById('editGPSCoords').value = '';
+            }
+            document.getElementById('editGPSAddress').value = gpsInfo.address || '';
+            document.getElementById('editWiFi').value = selectedUser.wifi_name || '';
+            
             // Hiển thị modal
             document.getElementById('editUserModal').style.display = 'block';
             
@@ -781,6 +813,9 @@
             let editLimitedValue = document.getElementById('editLimited').value;
             const editStatus = document.getElementById('editStatus').value;
             const editIP = document.getElementById('editIP').value;
+            const editGPSCoords = document.getElementById('editGPSCoords').value;
+            const editGPSAddress = document.getElementById('editGPSAddress').value;
+            const editWiFi = document.getElementById('editWiFi').value;
             
             // Kiểm tra các trường bắt buộc
             if (!editNameUser.trim() || !editAccount.trim() || !editPassword.trim()) {
@@ -797,52 +832,55 @@
                 editLimitedValue = days + (days === 1 ? ' day' : ' days');
             }
             
-            // Tìm và cập nhật người dùng trong mảng
-            const userIndex = usersWindows.findIndex(user => user.name === selectedUser.name) ||
-                             usersMacOS.findIndex(user => user.name === selectedUser.name) ||
-                             usersAndroid.findIndex(user => user.name === selectedUser.name) ||
-                             usersIOS.findIndex(user => user.name === selectedUser.name);
-            if (userIndex !== -1) {
-                if (currentOS === 'Windows') {
-                    usersWindows[userIndex] = {
-                        name: editNameUser,
-                        account: editAccount,
-                        password: editPassword,
-                        limited: editLimitedValue,
-                        status: editStatus,
-                        ip: editIP
-                    };
-                } else if (currentOS === 'MacOS') {
-                    usersMacOS[userIndex] = {
-                        name: editNameUser,
-                        account: editAccount,
-                        password: editPassword,
-                        limited: editLimitedValue,
-                        status: editStatus,
-                        ip: editIP
-                    };
-                } else if (currentOS === 'Android') {
-                    usersAndroid[userIndex] = {
-                        name: editNameUser,
-                        account: editAccount,
-                        password: editPassword,
-                        limited: editLimitedValue,
-                        status: editStatus,
-                        ip: editIP
-                    };
-                } else if (currentOS === 'IOS') {
-                    usersIOS[userIndex] = {
-                        name: editNameUser,
-                        account: editAccount,
-                        password: editPassword,
-                        limited: editLimitedValue,
-                        status: editStatus,
-                        ip: editIP
-                    };
+            // Xử lý tọa độ GPS
+            let gpsX = '', gpsY = '';
+            if (editGPSCoords) {
+                const coordParts = editGPSCoords.split(',');
+                if (coordParts.length === 2) {
+                    gpsY = coordParts[0].trim();
+                    gpsX = coordParts[1].trim();
                 }
+            }
+            
+            // Tìm và cập nhật người dùng trong mảng
+            let userArray;
+            switch (currentOS) {
+                case 'Windows':
+                    userArray = usersWindows;
+                    break;
+                case 'MacOS':
+                    userArray = usersMacOS;
+                    break;
+                case 'Android':
+                    userArray = usersAndroid;
+                    break;
+                case 'IOS':
+                    userArray = usersIOS;
+                    break;
+                default:
+                    userArray = [];
+            }
+            
+            const userIndex = userArray.findIndex(user => user.name === selectedUser.name);
+            if (userIndex !== -1) {
+                userArray[userIndex] = {
+                    ...userArray[userIndex],
+                    name: editNameUser,
+                    account: editAccount,
+                    password: editPassword,
+                    limited: editLimitedValue,
+                    status: editStatus,
+                    ip: editIP,
+                    gps_info: {
+                        x: gpsX,
+                        y: gpsY,
+                        address: editGPSAddress || 'Không có'
+                    },
+                    wifi_name: editWiFi || 'Không xác định'
+                };
                 
                 // Cập nhật selectedUser
-                selectedUser = usersWindows[userIndex] || usersMacOS[userIndex] || usersAndroid[userIndex] || usersIOS[userIndex];
+                selectedUser = userArray[userIndex];
                 
                 // Lưu vào localStorage
                 saveUsersToLocalStorage();
@@ -1064,9 +1102,11 @@
                                 <th onclick="sortTable(4); return false;">Limited ↕</th>
                                 <th onclick="sortTable(5); return false;">Status ↕</th>
                                 <th class="no-sort">
-                                    IP
+                                    GPS
                                     <span class="eye-icon" onclick="toggleIPVisibility(event); return false;">👁️</span>
                                 </th>
+                                <th>Địa chỉ</th>
+                                <th>WiFi</th>
                             </tr>
                         </thead>
                         <tbody id="userTableBody">
@@ -1101,21 +1141,29 @@
                     break;
             }
             currentUsers.forEach(user => {
-                // Xác định giá trị hiển thị cho mật khẩu và MAC
+                // Xác định giá trị hiển thị cho mật khẩu và GPS
                 const displayPassword = showPassword ? user.password : maskPassword(user.password);
                 const displayIP = showIP ? (user.ip || '') : maskIP(user.ip);
+                
+                // Lấy thông tin GPS và WiFi
+                const gpsInfo = user.gps_info || {};
+                const gpsCoords = gpsInfo.y && gpsInfo.x ? `${gpsInfo.y}, ${gpsInfo.x}` : 'Không có';
+                const gpsAddress = gpsInfo.address || 'Không có';
+                const wifiName = user.wifi_name || 'Không xác định';
                 
                 const newRow = document.createElement('tr');
                 newRow.setAttribute('onclick', 'selectRow(this)');
                 newRow.setAttribute('oncontextmenu', 'showContextMenu(event, this); return false;');
                 newRow.innerHTML = `
                     <td>${user.name}</td>
-                    <td>${user.email}</td>
+                    <td>${user.email || ''}</td>
                     <td>${user.account}</td>
                     <td class="masked-text" onclick="togglePasswordVisibility(event)">${displayPassword}</td>
                     <td>${user.limited}</td>
                     <td>${user.status}</td>
-                    <td class="masked-text">${displayIP}</td>
+                    <td class="masked-text">${gpsCoords}</td>
+                    <td>${gpsAddress}</td>
+                    <td>${wifiName}</td>
                 `;
                 fragment.appendChild(newRow);
             });
@@ -1144,22 +1192,44 @@
             const passwordCell = row.cells[3];
             const limited = row.cells[4].textContent;
             const status = row.cells[5].textContent;
-            const ipCell = row.cells[6];
+            const gpsCell = row.cells[6];
+            const addressCell = row.cells[7];
+            const wifiCell = row.cells[8];
             
-            // Hiển thị mật khẩu và MAC nếu có quyền admin
-            if (isAdminLoggedIn) {
-                passwordCell.textContent = selectedUser.password;
-                ipCell.textContent = selectedUser.ip;
+            // Tìm người dùng trong mảng dữ liệu
+            let userArray;
+            switch (currentOS) {
+                case 'Windows':
+                    userArray = usersWindows;
+                    break;
+                case 'MacOS':
+                    userArray = usersMacOS;
+                    break;
+                case 'Android':
+                    userArray = usersAndroid;
+                    break;
+                case 'IOS':
+                    userArray = usersIOS;
+                    break;
+                default:
+                    userArray = [];
             }
             
+            const user = userArray.find(u => u.name === name && u.account === account);
+            
             // Lưu thông tin người dùng được chọn vào biến toàn cục để sử dụng sau này
-            selectedUser = {
+            selectedUser = user || {
                 name: name,
                 account: account,
                 password: passwordCell.textContent,
                 limited: limited,
                 status: status,
-                ip: ipCell.textContent
+                gps_info: {
+                    x: gpsCell.textContent.split(',')[1]?.trim(),
+                    y: gpsCell.textContent.split(',')[0]?.trim(),
+                    address: addressCell.textContent
+                },
+                wifi_name: wifiCell.textContent
             };
             
             // Hiển thị thông tin người dùng đã chọn
@@ -1187,7 +1257,13 @@
                 limited: limited,
                 status: 'Active',
                 mac: mac,
-                ip: '' // Initialize IP as an empty string
+                ip: '', // Initialize IP as an empty string
+                gps_info: {
+                    x: '',
+                    y: '',
+                    address: 'Không có'
+                },
+                wifi_name: 'Không xác định'
             };
             
             console.log('Thêm người dùng mới:', newUser);
@@ -1500,24 +1576,6 @@
             forms.forEach(form => {
                 form.addEventListener('submit', function(event) {
                     event.preventDefault();
-                });
-            });
-            
-            // Ngăn chặn các nút có thể gây tải lại trang
-            const buttons = document.querySelectorAll('button');
-            buttons.forEach(button => {
-                if (!button.hasAttribute('type')) {
-                    button.setAttribute('type', 'button');
-                }
-            });
-            
-            // Ngăn chặn các thẻ a gây tải lại trang
-            const links = document.querySelectorAll('a');
-            links.forEach(link => {
-                link.addEventListener('click', function(event) {
-                    if (link.getAttribute('href') === '#' || link.getAttribute('href') === '') {
-                        event.preventDefault();
-                    }
                 });
             });
         });
