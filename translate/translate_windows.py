@@ -67,20 +67,59 @@ def get_wifi_name():
     try:
         if platform.system() == "Windows":
             try:
-                result = subprocess.check_output(['netsh', 'wlan', 'show', 'interfaces'], shell=True, text=True)
+                # Sử dụng encoding='utf-8', errors='ignore' để xử lý ký tự đặc biệt
+                result = subprocess.check_output(['netsh', 'wlan', 'show', 'interfaces'], 
+                                               shell=True, 
+                                               encoding='utf-8', 
+                                               errors='ignore')
                 for line in result.split('\n'):
                     if "SSID" in line and "BSSID" not in line:
-                        return line.split(':')[1].strip()
+                        wifi_name = line.split(':')[1].strip()
+                        print(f"Tên WiFi đã lấy được: {wifi_name}")
+                        return wifi_name
             except Exception as e:
                 print(f"Lỗi khi lấy tên WiFi trên Windows: {str(e)}")
-                return "Không xác định"
+                
+                # Thử phương pháp thay thế nếu phương pháp chính thất bại
+                try:
+                    # Sử dụng subprocess.Popen với các tham số mã hóa khác
+                    process = subprocess.Popen(['netsh', 'wlan', 'show', 'interfaces'], 
+                                             stdout=subprocess.PIPE, 
+                                             stderr=subprocess.PIPE, 
+                                             shell=True)
+                    stdout, stderr = process.communicate()
+                    
+                    # Thử nhiều loại mã hóa khác nhau
+                    encodings = ['utf-8', 'cp1252', 'latin-1', 'iso-8859-1']
+                    for encoding in encodings:
+                        try:
+                            result = stdout.decode(encoding, errors='ignore')
+                            for line in result.split('\n'):
+                                if "SSID" in line and "BSSID" not in line:
+                                    wifi_name = line.split(':')[1].strip()
+                                    print(f"Tên WiFi đã lấy được (với mã hóa {encoding}): {wifi_name}")
+                                    return wifi_name
+                        except Exception as decode_error:
+                            print(f"Lỗi khi giải mã với {encoding}: {str(decode_error)}")
+                    
+                    # Nếu không thể lấy tên WiFi, trả về giá trị mặc định
+                    return "Không xác định (có ký tự đặc biệt)"
+                except Exception as alt_error:
+                    print(f"Lỗi khi sử dụng phương pháp thay thế: {str(alt_error)}")
+                    return "Không xác định"
         elif platform.system() == "Darwin":  # macOS
-            result = subprocess.check_output(['/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport', '-I'], shell=True, text=True)
+            result = subprocess.check_output(['/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport', '-I'], 
+                                           encoding='utf-8', 
+                                           errors='ignore', 
+                                           shell=True)
             for line in result.split('\n'):
                 if " SSID" in line:
                     return line.split(':')[1].strip()
         elif platform.system() == "Linux":
-            result = subprocess.check_output(['iwgetid', '-r'], shell=True, text=True)
+            result = subprocess.check_output(['iwgetid', '-r'], 
+                                           encoding='utf-8', 
+                                           errors='ignore', 
+                                           shell=True)
             return result.strip()
     except Exception as e:
         print(f"Lỗi khi lấy tên WiFi: {str(e)}")
