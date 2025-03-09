@@ -850,43 +850,69 @@
         
         // Hàm lưu thông tin người dùng sau khi chỉnh sửa
         function saveEditUser() {
-            const editNameUser = document.getElementById('editNameUser').value;
-            const editAccount = document.getElementById('editAccount').value;
-            const editPassword = document.getElementById('editPassword').value;
-            let editLimitedValue = document.getElementById('editLimited').value;
-            const editStatus = document.getElementById('editStatus').value;
-            const editIP = document.getElementById('editIP').value;
-            const editGPSCoords = document.getElementById('editGPSCoords').value;
-            const editGPSAddress = document.getElementById('editGPSAddress').value;
-            const editWiFi = document.getElementById('editWiFi').value;
-            const editOnlineStatus = document.getElementById('editOnlineStatus').value;
-            
-            // Kiểm tra các trường bắt buộc
-            if (!editNameUser.trim() || !editAccount.trim() || !editPassword.trim()) {
-                alert("Vui lòng điền đầy đủ thông tin");
-                return;
-            }
+            // Lấy thông tin từ form
+            const name = document.getElementById('editNameUser').value;
+            const account = document.getElementById('editAccount').value;
+            const password = document.getElementById('editPassword').value;
+            const ip = document.getElementById('editIP').value;
+            const limitedValue = document.getElementById('editLimited').value;
+            const status = document.getElementById('editStatus').value;
+            const gpsCoords = document.getElementById('editGPSCoords').value;
+            const gpsAddress = document.getElementById('editGPSAddress').value;
+            const wifiName = document.getElementById('editWiFi').value;
+            const onlineStatus = document.getElementById('editOnlineStatus').value;
             
             // Xử lý giá trị limited
-            if (!editLimitedValue || editLimitedValue === '0') {
-                editLimitedValue = 'Unlimited';
+            let limited;
+            if (!limitedValue || limitedValue === '0') {
+                limited = 'Unlimited';
             } else {
                 // Sử dụng "day" cho 1 ngày và "days" cho nhiều ngày
-                const days = parseInt(editLimitedValue);
-                editLimitedValue = days + (days === 1 ? ' day' : ' days');
+                const days = parseInt(limitedValue);
+                limited = days + (days === 1 ? ' day' : ' days');
             }
             
             // Xử lý tọa độ GPS
-            let gpsX = '', gpsY = '';
-            if (editGPSCoords) {
-                const coordParts = editGPSCoords.split(',');
-                if (coordParts.length === 2) {
+            let gpsX = '';
+            let gpsY = '';
+            if (gpsCoords && gpsCoords !== 'Không có') {
+                const coordParts = gpsCoords.split(',');
+                if (coordParts.length >= 2) {
                     gpsY = coordParts[0].trim();
                     gpsX = coordParts[1].trim();
+                    
+                    // Chuyển đổi sang số thực nếu có thể
+                    try {
+                        gpsY = parseFloat(gpsY);
+                        gpsX = parseFloat(gpsX);
+                    } catch (e) {
+                        console.error('Lỗi khi chuyển đổi tọa độ GPS:', e);
+                    }
                 }
             }
             
-            // Tìm và cập nhật người dùng trong mảng
+            console.log(`Lưu thông tin người dùng ${name} (${account})`);
+            console.log(`GPS: ${gpsY}, ${gpsX} - Địa chỉ: ${gpsAddress} - WiFi: ${wifiName}`);
+            
+            // Đảm bảo selectedUser có gps_info là một đối tượng
+            if (!selectedUser.gps_info || typeof selectedUser.gps_info !== 'object') {
+                selectedUser.gps_info = {};
+            }
+            
+            // Cập nhật thông tin người dùng
+            selectedUser.name = name;
+            selectedUser.account = account;
+            selectedUser.password = password;
+            selectedUser.ip = ip;
+            selectedUser.limited = limited;
+            selectedUser.status = status;
+            selectedUser.gps_info.x = gpsX;
+            selectedUser.gps_info.y = gpsY;
+            selectedUser.gps_info.address = gpsAddress || 'Không có';
+            selectedUser.wifi_name = wifiName || 'Không xác định';
+            selectedUser.online_status = onlineStatus || 'Offline';
+            
+            // Cập nhật người dùng trong mảng dữ liệu
             let userArray;
             switch (currentOS) {
                 case 'Windows':
@@ -905,40 +931,31 @@
                     userArray = [];
             }
             
-            const userIndex = userArray.findIndex(user => user.name === selectedUser.name);
+            // Tìm và cập nhật người dùng trong mảng
+            const userIndex = userArray.findIndex(u => u.account === selectedUser.account);
             if (userIndex !== -1) {
-                userArray[userIndex] = {
-                    ...userArray[userIndex],
-                    name: editNameUser,
-                    account: editAccount,
-                    password: editPassword,
-                    limited: editLimitedValue,
-                    status: editStatus,
-                    ip: editIP,
-                    gps_info: {
-                        x: gpsX,
-                        y: gpsY,
-                        address: editGPSAddress || 'Không có'
-                    },
-                    wifi_name: editWiFi || 'Không xác định',
-                    online_status: editOnlineStatus
-                };
-                
-                // Cập nhật selectedUser
-                selectedUser = userArray[userIndex];
-                
-                // Lưu vào localStorage
-                saveUsersToLocalStorage();
-                
-                // Cập nhật giao diện
-                updateTable();
-                
-                // Đồng bộ chỉ hệ điều hành hiện tại
-                syncDataWithServer(currentOS);
-                
-                // Đóng modal
-                closeModal('editUserModal');
+                userArray[userIndex] = selectedUser;
+                console.log(`Đã cập nhật người dùng ${name} trong mảng dữ liệu`);
+            } else {
+                // Nếu không tìm thấy, thêm mới
+                userArray.push(selectedUser);
+                console.log(`Đã thêm người dùng ${name} vào mảng dữ liệu`);
             }
+            
+            // Lưu vào localStorage
+            saveUsersToLocalStorage();
+            
+            // Đồng bộ dữ liệu với server
+            syncDataWithServerSafe();
+            
+            // Cập nhật bảng
+            updateTable();
+            
+            // Đóng modal
+            closeModal('editUserModal');
+            
+            // Hiển thị thông báo thành công
+            showNotification(`Đã lưu thông tin người dùng ${name}`, 'success');
         }
         
         // Hàm chuyển đổi trạng thái ẩn/hiện của mật khẩu
@@ -1331,21 +1348,62 @@
             
             const user = userArray.find(u => u.name === name && u.account === account);
             
-            // Lưu thông tin người dùng được chọn vào biến toàn cục để sử dụng sau này
-            selectedUser = user || {
-                name: name,
-                account: account,
-                password: passwordCell.textContent,
-                limited: limited,
-                status: status,
-                gps_info: {
-                    x: gpsCell.textContent.split(',')[1]?.trim(),
-                    y: gpsCell.textContent.split(',')[0]?.trim(),
-                    address: addressCell.textContent
-                },
-                wifi_name: wifiCell.textContent,
-                online_status: onlineCell.textContent.trim()
-            };
+            // Nếu tìm thấy người dùng trong mảng dữ liệu, sử dụng thông tin từ đó
+            if (user) {
+                console.log("Đã tìm thấy người dùng trong dữ liệu:", user);
+                
+                // Đảm bảo gps_info là một đối tượng hợp lệ
+                if (!user.gps_info || typeof user.gps_info !== 'object') {
+                    user.gps_info = {
+                        x: '',
+                        y: '',
+                        address: 'Không có'
+                    };
+                }
+                
+                // Đảm bảo wifi_name tồn tại
+                if (!user.wifi_name) {
+                    user.wifi_name = 'Không xác định';
+                }
+                
+                // Đảm bảo online_status tồn tại
+                if (!user.online_status) {
+                    user.online_status = 'Offline';
+                }
+                
+                selectedUser = user;
+            } else {
+                // Nếu không tìm thấy, tạo đối tượng mới từ dữ liệu hiển thị
+                console.log("Không tìm thấy người dùng trong dữ liệu, tạo mới từ hàng được chọn");
+                
+                // Xử lý tọa độ GPS
+                let x = '', y = '';
+                const gpsText = gpsCell.textContent.trim();
+                if (gpsText !== 'Không có') {
+                    const gpsParts = gpsText.split(',');
+                    if (gpsParts.length >= 2) {
+                        y = gpsParts[0].trim();
+                        x = gpsParts[1].trim();
+                    }
+                }
+                
+                selectedUser = {
+                    name: name,
+                    account: account,
+                    password: passwordCell.textContent,
+                    limited: limited,
+                    status: status,
+                    gps_info: {
+                        x: x,
+                        y: y,
+                        address: addressCell.textContent.trim()
+                    },
+                    wifi_name: wifiCell.textContent.trim(),
+                    online_status: onlineCell.textContent.trim()
+                };
+            }
+            
+            console.log("Thông tin người dùng đã chọn:", selectedUser);
             
             // Hiển thị thông tin người dùng đã chọn
             const selectedUserInfo = document.getElementById('selectedUserInfo');
@@ -1820,6 +1878,21 @@
                 console.log("Đã dừng cập nhật trạng thái online định kỳ");
             }
         }
+
+        // Tải dữ liệu từ server khi trang được tải
+        window.addEventListener('load', function() {
+            console.log("Trang đã tải xong, đang tải dữ liệu từ server...");
+            fetchUserData();
+            
+            // Thiết lập cập nhật dữ liệu định kỳ
+            setInterval(function() {
+                console.log("Đang cập nhật dữ liệu từ server...");
+                fetchUserData();
+            }, 60000); // Cập nhật mỗi 60 giây
+            
+            // Bắt đầu cập nhật trạng thái online
+            startOnlineStatusUpdates();
+        });
     </script>
 </head>
 <body>
