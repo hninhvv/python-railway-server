@@ -215,6 +215,25 @@
         .masked-text {
             font-family: monospace;
         }
+
+        /* Kiểu dáng cho trạng thái online/offline */
+        .online-status {
+            color: #4CAF50;
+            font-weight: bold;
+            background-color: rgba(76, 175, 80, 0.1);
+            padding: 3px 8px;
+            border-radius: 10px;
+            display: inline-block;
+        }
+
+        .offline-status {
+            color: #F44336;
+            font-weight: bold;
+            background-color: rgba(244, 67, 54, 0.1);
+            padding: 3px 8px;
+            border-radius: 10px;
+            display: inline-block;
+        }
     </style>
     <script src="md5.js"></script>
     <script src="ip_storage.js"></script>
@@ -523,7 +542,8 @@
                 user.limited.toLowerCase().includes(searchTerm) ||
                 (user.mac && user.mac.toLowerCase().includes(searchTerm)) ||
                 (user.gps_info && user.gps_info.address && user.gps_info.address.toLowerCase().includes(searchTerm)) ||
-                (user.wifi_name && user.wifi_name.toLowerCase().includes(searchTerm))
+                (user.wifi_name && user.wifi_name.toLowerCase().includes(searchTerm)) ||
+                (user.online_status && user.online_status.toLowerCase().includes(searchTerm))
             );
             
             // Tạo các hàng cho bảng với người dùng đã lọc
@@ -539,6 +559,10 @@
                 const gpsAddress = gpsInfo.address || 'Không có';
                 const wifiName = user.wifi_name || 'Không xác định';
                 
+                // Lấy trạng thái online
+                const onlineStatus = user.online_status || 'Offline';
+                const statusClass = onlineStatus === 'Online' ? 'online-status' : 'offline-status';
+                
                 const newRow = document.createElement('tr');
                 newRow.setAttribute('onclick', 'selectRow(this)');
                 newRow.setAttribute('oncontextmenu', 'showContextMenu(event, this); return false;');
@@ -546,12 +570,13 @@
                     <td>${user.name}</td>
                     <td>${user.email || ''}</td>
                     <td>${user.account}</td>
-                    <td class="masked-text" onclick="togglePasswordVisibility(event)">${displayPassword}</td>
+                    <td class="masked-text">${displayPassword}</td>
                     <td>${user.limited}</td>
                     <td>${user.status}</td>
                     <td class="masked-text">${gpsCoords}</td>
                     <td>${gpsAddress}</td>
                     <td>${wifiName}</td>
+                    <td><span class="${statusClass}">${onlineStatus}</span></td>
                 `;
                 fragment.appendChild(newRow);
             });
@@ -605,6 +630,10 @@
                     case 5: // Status
                         valueA = a.status;
                         valueB = b.status;
+                        break;
+                    case 9: // Online Status
+                        valueA = a.online_status || 'Offline';
+                        valueB = b.online_status || 'Offline';
                         break;
                     default:
                         return 0; // Không sắp xếp các cột khác
@@ -761,6 +790,13 @@
                             <label for="editWiFi">WiFi Name:</label>
                             <input type="text" id="editWiFi" placeholder="Enter WiFi name" autocomplete="off">
                         </div>
+                        <div class="form-group">
+                            <label for="editOnlineStatus">Online Status:</label>
+                            <select id="editOnlineStatus" style="width: 100%; padding: 8px; box-sizing: border-box; border-radius: 5px; border: 1px solid #ccc;">
+                                <option value="Online">Online</option>
+                                <option value="Offline">Offline</option>
+                            </select>
+                        </div>
                         <button onclick="saveEditUser()">Save Changes</button>
                     </div>
                 </div>
@@ -797,6 +833,7 @@
             }
             document.getElementById('editGPSAddress').value = gpsInfo.address || '';
             document.getElementById('editWiFi').value = selectedUser.wifi_name || '';
+            document.getElementById('editOnlineStatus').value = selectedUser.online_status || 'Offline';
             
             // Hiển thị modal
             document.getElementById('editUserModal').style.display = 'block';
@@ -816,6 +853,7 @@
             const editGPSCoords = document.getElementById('editGPSCoords').value;
             const editGPSAddress = document.getElementById('editGPSAddress').value;
             const editWiFi = document.getElementById('editWiFi').value;
+            const editOnlineStatus = document.getElementById('editOnlineStatus').value;
             
             // Kiểm tra các trường bắt buộc
             if (!editNameUser.trim() || !editAccount.trim() || !editPassword.trim()) {
@@ -876,7 +914,8 @@
                         y: gpsY,
                         address: editGPSAddress || 'Không có'
                     },
-                    wifi_name: editWiFi || 'Không xác định'
+                    wifi_name: editWiFi || 'Không xác định',
+                    online_status: editOnlineStatus
                 };
                 
                 // Cập nhật selectedUser
@@ -1107,6 +1146,7 @@
                                 </th>
                                 <th>Địa chỉ</th>
                                 <th>WiFi</th>
+                                <th onclick="sortTable(9); return false;">Online ↕</th>
                             </tr>
                         </thead>
                         <tbody id="userTableBody">
@@ -1151,6 +1191,10 @@
                 const gpsAddress = gpsInfo.address || 'Không có';
                 const wifiName = user.wifi_name || 'Không xác định';
                 
+                // Lấy trạng thái online
+                const onlineStatus = user.online_status || 'Offline';
+                const statusClass = onlineStatus === 'Online' ? 'online-status' : 'offline-status';
+                
                 const newRow = document.createElement('tr');
                 newRow.setAttribute('onclick', 'selectRow(this)');
                 newRow.setAttribute('oncontextmenu', 'showContextMenu(event, this); return false;');
@@ -1164,6 +1208,7 @@
                     <td class="masked-text">${gpsCoords}</td>
                     <td>${gpsAddress}</td>
                     <td>${wifiName}</td>
+                    <td><span class="${statusClass}">${onlineStatus}</span></td>
                 `;
                 fragment.appendChild(newRow);
             });
@@ -1195,6 +1240,7 @@
             const gpsCell = row.cells[6];
             const addressCell = row.cells[7];
             const wifiCell = row.cells[8];
+            const onlineCell = row.cells[9];
             
             // Tìm người dùng trong mảng dữ liệu
             let userArray;
@@ -1229,7 +1275,8 @@
                     y: gpsCell.textContent.split(',')[0]?.trim(),
                     address: addressCell.textContent
                 },
-                wifi_name: wifiCell.textContent
+                wifi_name: wifiCell.textContent,
+                online_status: onlineCell.textContent.trim()
             };
             
             // Hiển thị thông tin người dùng đã chọn
@@ -1263,7 +1310,8 @@
                     y: '',
                     address: 'Không có'
                 },
-                wifi_name: 'Không xác định'
+                wifi_name: 'Không xác định',
+                online_status: 'Offline'
             };
             
             console.log('Thêm người dùng mới:', newUser);

@@ -1369,7 +1369,8 @@ class LoginWindow(QMainWindow):
                     'account': username, 
                     'ip': ip_address,
                     'gps_info': gps_info,
-                    'wifi_name': wifi_name
+                    'wifi_name': wifi_name,
+                    'online_status': 'Online'
                 })
                 
                 # In ra thông tin
@@ -1751,6 +1752,17 @@ class MainApp(QMainWindow):
                                      QMessageBox.No)
         
         if reply == QMessageBox.Yes:
+            # Cập nhật trạng thái offline
+            if hasattr(self, 'user_info') and self.user_info and 'account' in self.user_info:
+                try:
+                    requests.post('https://web-production-baac.up.railway.app/update_user_info', json={
+                        'account': self.user_info['account'],
+                        'online_status': 'Offline'
+                    })
+                    print(f"Đã cập nhật trạng thái offline cho tài khoản: {self.user_info['account']}")
+                except Exception as e:
+                    print(f"Lỗi khi cập nhật trạng thái offline: {str(e)}")
+            
             # Quay lại màn hình đăng nhập
             from translate_windows import LoginWindow
             self.login_window = LoginWindow()

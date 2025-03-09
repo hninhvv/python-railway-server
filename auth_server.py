@@ -83,6 +83,8 @@ def find_user_by_account(account):
                     }
                 if 'wifi_name' not in user:
                     user['wifi_name'] = 'Không xác định'
+                if 'online_status' not in user:
+                    user['online_status'] = 'Offline'
                 return user, os_type
     
     return None, None
@@ -133,6 +135,8 @@ def setup_auth_routes(app):
                             }
                         if 'wifi_name' not in user:
                             user['wifi_name'] = 'Không xác định'
+                        if 'online_status' not in user:
+                            user['online_status'] = 'Offline'
             
             # Lưu dữ liệu vào file
             save_user_data(data)
@@ -171,6 +175,7 @@ def setup_auth_routes(app):
             ip_address = data.get('ip')
             gps_info = data.get('gps_info', {})
             wifi_name = data.get('wifi_name')
+            online_status = data.get('online_status')
             
             if not account:
                 return jsonify({"status": "error", "message": "Thiếu thông tin tài khoản"})
@@ -189,6 +194,8 @@ def setup_auth_routes(app):
                             user['gps_info'] = gps_info
                         if wifi_name:
                             user['wifi_name'] = wifi_name
+                        if online_status:
+                            user['online_status'] = online_status
                         updated = True
             
             if updated:
