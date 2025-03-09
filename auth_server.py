@@ -281,10 +281,28 @@ def setup_auth_routes(app):
                 # Cập nhật thông tin người dùng
                 if ip_address:
                     user_data[os_type][user_index]['ip'] = ip_address
+                    print(f"Cập nhật IP thành: {ip_address}")
+                
+                # Cập nhật thông tin GPS
                 if gps_info:
-                    user_data[os_type][user_index]['gps_info'] = gps_info
+                    # Đảm bảo gps_info là một dictionary
+                    if isinstance(gps_info, dict):
+                        # Nếu gps_info chưa tồn tại, tạo mới
+                        if 'gps_info' not in user_data[os_type][user_index]:
+                            user_data[os_type][user_index]['gps_info'] = {}
+                        
+                        # Cập nhật từng trường trong gps_info
+                        for key, value in gps_info.items():
+                            user_data[os_type][user_index]['gps_info'][key] = value
+                        
+                        print(f"Cập nhật GPS thành: {gps_info}")
+                    else:
+                        print(f"Lỗi: gps_info không phải là dictionary: {type(gps_info)}")
+                
                 if wifi_name:
                     user_data[os_type][user_index]['wifi_name'] = wifi_name
+                    print(f"Cập nhật WiFi thành: {wifi_name}")
+                
                 if online_status:
                     # Cập nhật trạng thái online và thời gian cập nhật
                     user_data[os_type][user_index]['online_status'] = online_status

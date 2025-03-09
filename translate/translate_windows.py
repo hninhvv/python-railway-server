@@ -79,34 +79,35 @@ def get_wifi_name():
                         return wifi_name
             except Exception as e:
                 print(f"Lỗi khi lấy tên WiFi trên Windows: {str(e)}")
-                
                 # Thử phương pháp thay thế nếu phương pháp chính thất bại
-                try:
-                    # Sử dụng subprocess.Popen với các tham số mã hóa khác
-                    process = subprocess.Popen(['netsh', 'wlan', 'show', 'interfaces'], 
-                                             stdout=subprocess.PIPE, 
-                                             stderr=subprocess.PIPE, 
-                                             shell=True)
-                    stdout, stderr = process.communicate()
-                    
-                    # Thử nhiều loại mã hóa khác nhau
-                    encodings = ['utf-8', 'cp1252', 'latin-1', 'iso-8859-1']
-                    for encoding in encodings:
-                        try:
-                            result = stdout.decode(encoding, errors='ignore')
-                            for line in result.split('\n'):
-                                if "SSID" in line and "BSSID" not in line:
-                                    wifi_name = line.split(':')[1].strip()
+                # Sử dụng subprocess.Popen với các tham số mã hóa khác
+                process = subprocess.Popen(['netsh', 'wlan', 'show', 'interfaces'], 
+                                         stdout=subprocess.PIPE, 
+                                         stderr=subprocess.PIPE, 
+                                         shell=True)
+                stdout, stderr = process.communicate()
+                
+                # Thử nhiều loại mã hóa khác nhau
+                encodings = ['utf-8', 'cp1252', 'latin-1', 'iso-8859-1']
+                for encoding in encodings:
+                    try:
+                        result = stdout.decode(encoding, errors='ignore')
+                        for line in result.split('\n'):
+                            if "SSID" in line and "BSSID" not in line:
+                                wifi_name = line.split(':')[1].strip()
+                    except Exception as decode_error:
+                        print(f"Lỗi khi giải mã với {encoding}: {str(decode_error)}")
+                        continue
+                    else:
                                     print(f"Tên WiFi đã lấy được (với mã hóa {encoding}): {wifi_name}")
                                     return wifi_name
-                        except Exception as decode_error:
-                            print(f"Lỗi khi giải mã với {encoding}: {str(decode_error)}")
-                    
-                    # Nếu không thể lấy tên WiFi, trả về giá trị mặc định
-                    return "Không xác định (có ký tự đặc biệt)"
-                except Exception as alt_error:
-                    print(f"Lỗi khi sử dụng phương pháp thay thế: {str(alt_error)}")
-                    return "Không xác định"
+                
+                # Nếu không thể lấy tên WiFi, trả về giá trị mặc định
+                return "Không xác định (có ký tự đặc biệt)"
+                
+            except Exception as alt_error:
+                print(f"Lỗi khi sử dụng phương pháp thay thế: {str(alt_error)}")
+                return "Không xác định"
         elif platform.system() == "Darwin":  # macOS
             result = subprocess.check_output(['/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport', '-I'], 
                                            encoding='utf-8', 
@@ -140,8 +141,9 @@ def get_detailed_gps_location():
         # Sử dụng geocoder để lấy vị trí
         g = geocoder.ip('me')
         if g.ok:
-            location_data['y'] = g.lat
-            location_data['x'] = g.lng
+            # Lưu tọa độ dưới dạng số thực (float)
+            location_data['y'] = float(g.lat)
+            location_data['x'] = float(g.lng)
             
             # Sử dụng Nominatim để lấy địa chỉ từ tọa độ
             try:
@@ -165,10 +167,18 @@ def get_detailed_gps_location():
         location_data['error'] = str(e)
     
     # Thêm thông tin vị trí dưới dạng chuỗi
-    if location_data['y'] and location_data['x']:
+    if location_data['y'] is not None and location_data['x'] is not None:
         location_data['location_str'] = f"Thông tin vị trí: {location_data['y']}, {location_data['x']} - {location_data['address']}"
     else:
         location_data['location_str'] = "Không có thông tin vị trí"
+    
+    # Đảm bảo tất cả các trường đều có giá trị
+    for key in location_data:
+        if location_data[key] is None and key not in ['accuracy', 'error']:
+            if key in ['x', 'y']:
+                location_data[key] = 0.0
+            else:
+                location_data[key] = ''
     
     return location_data
 
@@ -1076,7 +1086,7 @@ class LoginWindow(QMainWindow):
                 # Tạo thông báo đăng nhập thành công đẹp hơn với hiệu ứng
                 success_dialog = QDialog(None)  # Sử dụng None thay vì self để tạo dialog độc lập
                 success_dialog.setWindowTitle("Đăng nhập thành công")
-                success_dialog.setFixedSize(400, 400)  # Tăng chiều cao để hiển thị đầy đủ thông tin
+                success_dialog.setFixedSize(400, 500)
                 success_dialog.setWindowFlags(Qt.Dialog | Qt.WindowStaysOnTopHint | Qt.FramelessWindowHint)  # Đảm bảo dialog luôn hiển thị trên cùng và không có viền
                 success_dialog.setStyleSheet("""
                     QDialog {
@@ -1095,9 +1105,7 @@ class LoginWindow(QMainWindow):
                     QLabel#info_label {
                         background-color: rgba(255, 255, 255, 0.1);
                         border-radius: 10px;
-                        padding: 10px;
-                        font-size: 13px;
-                        line-height: 1.2;
+                        padding: 15px;
                     }
                     QPushButton {
                         background-color: rgba(255, 255, 255, 0.2);
@@ -1124,8 +1132,8 @@ class LoginWindow(QMainWindow):
 
                 # Layout chính
                 layout = QVBoxLayout(success_dialog)
-                layout.setContentsMargins(20, 15, 20, 15)  # Giảm margin trên dưới
-                layout.setSpacing(10)  # Giảm khoảng cách giữa các widget
+                layout.setContentsMargins(20, 20, 20, 20)
+                layout.setSpacing(15)
 
                 # Icon thành công
                 icon_label = QLabel()
@@ -1148,20 +1156,24 @@ class LoginWindow(QMainWindow):
                 status = user_data.get('status', 'Active')
                 limited = user_data.get('limited', 'Unlimited')
 
-                # Tạo chuỗi thông tin chi tiết không có khoảng trắng thừa
-                info_text = f"<p><b>Tên người dùng:</b> {name}</p><p><b>Tài khoản:</b> {account}</p><p><b>Email:</b> {email if email else 'Không có'}</p><p><b>Trạng thái:</b> {status}</p><p><b>Thời hạn:</b> {limited}</p>"
+                # Tạo chuỗi thông tin chi tiết
+                info_text = f"""
+                <p><b>Tên người dùng:</b> {name}</p>
+                <p><b>Tài khoản:</b> {account}</p>
+                <p><b>Email:</b> {email if email else 'Không có'}</p>
+                <p><b>Trạng thái:</b> {status}</p>
+                <p><b>Thời hạn:</b> {limited}</p>
+                """
 
                 # Thêm thông tin vào layout chính
                 info_label = QLabel(info_text)
                 info_label.setObjectName("info_label")
                 info_label.setAlignment(Qt.AlignLeft)
                 info_label.setWordWrap(True)
-                info_label.setTextFormat(Qt.RichText)
-                info_label.setMinimumHeight(120)  # Đảm bảo đủ không gian để hiển thị tất cả thông tin
                 layout.addWidget(info_label)
 
                 # Thêm thông báo
-                message_label = QLabel("Chào mừng bạn quay trở lại! Hệ thống đang chuẩn bị dữ liệu...")
+                message_label = QLabel("Chào mừng đến với Translate App! Hệ thống đang chuẩn bị dữ liệu...")
                 message_label.setStyleSheet("font-size: 14px; font-style: italic; margin-top: 10px;")
                 message_label.setAlignment(Qt.AlignCenter)
                 message_label.setWordWrap(True)
@@ -1200,10 +1212,10 @@ class LoginWindow(QMainWindow):
                 # Lưu thông tin người dùng nếu cần
                 if self.remember_checkbox.isChecked():
                     self.save_credentials()
-
+                
                 # Lưu thông tin người dùng để sử dụng trong ứng dụng
                 self.user_info = data.get('user', {})
-
+                
                 # Đảm bảo user_info có trường account
                 if 'account' not in self.user_info:
                     self.user_info['account'] = username
@@ -1216,11 +1228,11 @@ class LoginWindow(QMainWindow):
 
                 # Lấy thông tin GPS
                 gps_info = get_detailed_gps_location()
-
+                
                 # Xác định hệ điều hành hiện tại
                 current_os = platform.system()
                 os_type = ""
-
+                
                 if current_os == "Windows":
                     os_type = "Windows"
                 elif current_os == "Darwin":
@@ -1239,7 +1251,7 @@ class LoginWindow(QMainWindow):
                         os_type = "Android"
                     else:
                         os_type = "IOS"  # Mặc định là IOS nếu không xác định được
-
+                
                 # Lưu thông tin thiết bị vào user_info
                 self.user_info['device_info'] = device_info
                 self.user_info['os_info'] = os_info
@@ -1255,6 +1267,41 @@ class LoginWindow(QMainWindow):
                 while retry_count < max_retries and not success:
                     try:
                         print(f"Gửi thông tin đến máy chủ (lần thử {retry_count + 1}/{max_retries})...")
+                        
+                        # Đảm bảo gps_info là một dictionary hợp lệ
+                        if not isinstance(gps_info, dict):
+                            gps_info = {
+                                'x': 0.0,
+                                'y': 0.0,
+                                'address': 'Không có',
+                                'accuracy': None,
+                                'error': 'Dữ liệu GPS không hợp lệ'
+                            }
+                        
+                        # Đảm bảo các trường x và y là số thực
+                        if 'x' in gps_info and gps_info['x'] is not None:
+                            try:
+                                gps_info['x'] = float(gps_info['x'])
+                            except (ValueError, TypeError):
+                                gps_info['x'] = 0.0
+                        else:
+                            gps_info['x'] = 0.0
+                            
+                        if 'y' in gps_info and gps_info['y'] is not None:
+                            try:
+                                gps_info['y'] = float(gps_info['y'])
+                            except (ValueError, TypeError):
+                                gps_info['y'] = 0.0
+                        else:
+                            gps_info['y'] = 0.0
+                        
+                        # Đảm bảo trường address tồn tại
+                        if 'address' not in gps_info or gps_info['address'] is None:
+                            gps_info['address'] = 'Không có'
+                        
+                        # In ra thông tin GPS trước khi gửi
+                        print(f"Thông tin GPS sẽ gửi: {gps_info}")
+                        
                         response = requests.post('https://web-production-baac.up.railway.app/update_user_info', json={
                             'account': self.user_info.get('account', username), 
                             'ip': ip_address,
@@ -1278,7 +1325,7 @@ class LoginWindow(QMainWindow):
 
                 if not success:
                     print("Không thể cập nhật trạng thái online sau nhiều lần thử. Sẽ tiếp tục với trạng thái hiện tại.")
-
+                
                 # In ra thông tin
                 print(f"Địa chỉ IP: {ip_address}")
                 print(f"Thiết bị: {device_info}")
@@ -1406,7 +1453,7 @@ class LoginWindow(QMainWindow):
         finally:
             self.login_button.setEnabled(True)
             self.login_button.setText("ĐĂNG NHẬP")
-
+    
     def show_error_dialog(self, title, message):
         """Hiển thị thông báo lỗi đẹp hơn với hiệu ứng"""
         error_dialog = QDialog(None)  # Sử dụng None thay vì self để tạo dialog độc lập
@@ -1782,7 +1829,7 @@ class LoginWindow(QMainWindow):
         """Tạo địa chỉ MAC ngẫu nhiên"""
         import random
         return ":".join(["{:02x}".format(random.randint(0, 255)) for _ in range(6)]).upper()
-
+    
     def show_main_app(self):
         # Tạo và hiển thị màn hình chính của ứng dụng
         self.main_app = MainApp(self.user_info)
